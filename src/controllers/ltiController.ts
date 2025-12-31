@@ -14,25 +14,29 @@ export const handleLaunch = async (req: Request, res: Response): Promise<void> =
       user_id,
       lis_person_name_full,
       custom_canvas_course_id,
-      context_id,
-      custom_quiz_ids  // ← NUEVO: Leer quiz_ids del custom field
+      context_id
     } = req.body;
+
+    // IMPORTANTE: Leer quiz_ids del query parameter
+    const quizIdsFromQuery = req.query.quiz_ids as string | undefined;
 
     console.log('📝 Procesando LTI Launch...');
     console.log('👤 Usuario:', lis_person_name_full);
     console.log('📚 Curso:', custom_canvas_course_id || context_id);
     console.log('🆔 Canvas User ID:', custom_canvas_user_id);
-    console.log('📊 Custom Quiz IDs:', custom_quiz_ids);
+    console.log('🆔 LTI User ID:', user_id);
+    console.log('📊 Quiz IDs (query):', quizIdsFromQuery);
 
     const canvasUserId = custom_canvas_user_id || user_id;
 
-    // Determinar quiz_ids: primero custom_quiz_ids, luego MONITORED_QUIZZES del .env
+    // Determinar quiz_ids con prioridad:
+    // 1. Query parameter (desde iframe)
+    // 2. Fallback a MONITORED_QUIZZES del .env
     let quizIds: string[] = [];
     
-    if (custom_quiz_ids) {
-      // Viene del custom field del LTI
-      quizIds = custom_quiz_ids.split(',').map((id: string) => id.trim());
-      console.log('✅ Usando quiz_ids del custom field');
+    if (quizIdsFromQuery) {
+      quizIds = quizIdsFromQuery.split(',').map(id => id.trim());
+      console.log('✅ Usando quiz_ids del query parameter:', quizIds);
     } else {
       // Fallback a MONITORED_QUIZZES del .env
       const monitoredQuizzes = process.env.MONITORED_QUIZZES || '';
@@ -40,12 +44,12 @@ export const handleLaunch = async (req: Request, res: Response): Promise<void> =
         const [, quizId] = pair.trim().split(':');
         return quizId;
       }).filter(Boolean);
-      console.log('✅ Usando quiz_ids del .env');
+      console.log('✅ Usando quiz_ids del .env (fallback):', quizIds);
     }
 
     if (quizIds.length === 0) {
       console.error('❌ No hay quizzes configurados');
-      res.status(500).send('No quizzes configured');
+      res.status(500).send('No quizzes configured. Pass quiz_ids as query parameter.');
       return;
     }
 
