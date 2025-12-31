@@ -15,7 +15,7 @@ export const handleLaunch = async (req: Request, res: Response): Promise<void> =
       lis_person_name_full,
       custom_canvas_course_id,
       context_id,
-      custom_quiz_ids  // ← Canvas pasa esto desde el iframe
+      quiz_ids_param
     } = req.body;
 
     console.log('📝 Procesando LTI Launch...');
@@ -23,18 +23,16 @@ export const handleLaunch = async (req: Request, res: Response): Promise<void> =
     console.log('📚 Curso:', custom_canvas_course_id || context_id);
     console.log('🆔 Canvas User ID:', custom_canvas_user_id);
     console.log('🆔 LTI User ID:', user_id);
-    console.log('📊 Custom Quiz IDs:', custom_quiz_ids);
+    console.log('📊 Quiz IDs Param:', quiz_ids_param);
 
     const canvasUserId = custom_canvas_user_id || user_id;
 
-    // Determinar quiz_ids
     let quizIds: string[] = [];
     
-    if (custom_quiz_ids) {
-      quizIds = custom_quiz_ids.split(',').map((id: string) => id.trim());
-      console.log('✅ Usando quiz_ids del custom field:', quizIds);
+    if (quiz_ids_param) {
+      quizIds = quiz_ids_param.split(',').map((id: string) => id.trim());
+      console.log('✅ Usando quiz_ids del parámetro:', quizIds);
     } else {
-      // Fallback a MONITORED_QUIZZES del .env
       const monitoredQuizzes = process.env.MONITORED_QUIZZES || '';
       quizIds = monitoredQuizzes.split(',').map(pair => {
         const [, quizId] = pair.trim().split(':');
