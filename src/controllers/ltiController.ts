@@ -14,29 +14,25 @@ export const handleLaunch = async (req: Request, res: Response): Promise<void> =
       user_id,
       lis_person_name_full,
       custom_canvas_course_id,
-      context_id
+      context_id,
+      custom_quiz_ids  // ← Canvas pasa esto desde el iframe
     } = req.body;
-
-    // IMPORTANTE: Leer quiz_ids del query parameter
-    const quizIdsFromQuery = req.query.quiz_ids as string | undefined;
 
     console.log('📝 Procesando LTI Launch...');
     console.log('👤 Usuario:', lis_person_name_full);
     console.log('📚 Curso:', custom_canvas_course_id || context_id);
     console.log('🆔 Canvas User ID:', custom_canvas_user_id);
     console.log('🆔 LTI User ID:', user_id);
-    console.log('📊 Quiz IDs (query):', quizIdsFromQuery);
+    console.log('📊 Custom Quiz IDs:', custom_quiz_ids);
 
     const canvasUserId = custom_canvas_user_id || user_id;
 
-    // Determinar quiz_ids con prioridad:
-    // 1. Query parameter (desde iframe)
-    // 2. Fallback a MONITORED_QUIZZES del .env
+    // Determinar quiz_ids
     let quizIds: string[] = [];
     
-    if (quizIdsFromQuery) {
-      quizIds = quizIdsFromQuery.split(',').map(id => id.trim());
-      console.log('✅ Usando quiz_ids del query parameter:', quizIds);
+    if (custom_quiz_ids) {
+      quizIds = custom_quiz_ids.split(',').map((id: string) => id.trim());
+      console.log('✅ Usando quiz_ids del custom field:', quizIds);
     } else {
       // Fallback a MONITORED_QUIZZES del .env
       const monitoredQuizzes = process.env.MONITORED_QUIZZES || '';
@@ -49,7 +45,7 @@ export const handleLaunch = async (req: Request, res: Response): Promise<void> =
 
     if (quizIds.length === 0) {
       console.error('❌ No hay quizzes configurados');
-      res.status(500).send('No quizzes configured. Pass quiz_ids as query parameter.');
+      res.status(500).send('No quizzes configured');
       return;
     }
 
