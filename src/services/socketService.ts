@@ -6,6 +6,9 @@ import { Server as SocketIOServer, Socket } from 'socket.io';
 
 let io: SocketIOServer | null = null;
 
+// Mapa para trackear qué socket maneja qué quizzes
+const socketQuizMap = new Map<string, { userId: string; quizIds: string[] }>();
+
 export const initializeSocket = (socketServer: SocketIOServer): void => {
   if (io) {
     console.log('⚠️  Socket.io ya inicializado, omitiendo...');
@@ -24,24 +27,32 @@ export const initializeSocket = (socketServer: SocketIOServer): void => {
       return;
     }
 
-    // Crear ID único: userId-quizId1-quizId2-quizId3 (ordenados)
+    // Crear ID único de room: userId-quizId1-quizId2-quizId3 (ordenados)
     const sortedQuizIds = quizIds
       .split(',')
       .map(id => id.trim())
-      .sort()
-      .join('-');
+      .sort();
     
-    const uniqueSocketId = `${userId}-${sortedQuizIds}`;
+    const uniqueRoomId = `${userId}-${sortedQuizIds.join('-')}`;
     
-    // Asignar como socket.id
-    socket.id = uniqueSocketId;
+    // Unir socket a la room única
+    socket.join(uniqueRoomId);
+    
+    // Guardar mapping para este socket
+    socketQuizMap.set(socket.id, {
+      userId,
+      quizIds: sortedQuizIds
+    });
 
-    console.log(`🔌 Iframe conectado: ${uniqueSocketId}`);
+    console.log(`🔌 Iframe conectado:`);
+    console.log(`   🆔 Socket ID: ${socket.id}`);
+    console.log(`   🏠 Room: ${uniqueRoomId}`);
     console.log(`   👤 Usuario: ${userId}`);
     console.log(`   📊 Quizzes: ${quizIds}`);
 
     socket.on('disconnect', () => {
-      console.log(`🔌 Iframe desconectado: ${uniqueSocketId}`);
+      console.log(`🔌 Iframe desconectado: ${socket.id}`);
+      socketQuizMap.delete(socket.id);
     });
   });
 
@@ -64,23 +75,24 @@ export const emitQuizUpdate = (userId: string, quizId: string, data: any): void 
     return;
   }
 
-  // Encontrar todos los sockets de este usuario que monitorean este quiz
-  const sockets = Array.from(io.sockets.sockets.values());
   let emittedCount = 0;
 
-  sockets.forEach((socket: Socket) => {
-    // socket.id format: "190276-193158-193159-193160"
-    const [socketUserId, ...socketQuizIds] = socket.id.split('-');
-    
+  // Iterar sobre todos los sockets conectados
+  socketQuizMap.forEach((socketData, socketId) => {
     // Verificar si este socket pertenece al usuario y monitorea el quiz
-    if (socketUserId === userId && socketQuizIds.includes(quizId)) {
-      socket.emit('quiz-updated', data);
+    if (socketData.userId === userId && socketData.quizIds.includes(quizId)) {
+      // Emitir al socket específico
+      io!.to(socketId).emit('quiz-updated', data);
       emittedCount++;
-      console.log(`   ⚡ → Iframe ${socket.id}`);
+      
+      const roomId = `${userId}-${socketData.quizIds.join('-')}`;
+      console.log(`   ⚡ → Room ${roomId}`);
     }
   });
 
   if (emittedCount > 0) {
     console.log(`📤 Quiz ${quizId} actualizado → ${emittedCount} iframe(s) de usuario ${userId}`);
+  } else {
+    console.log(`⚠️  Quiz ${quizId} - Usuario ${userId} no tiene iframes conectados`);
   }
 };
