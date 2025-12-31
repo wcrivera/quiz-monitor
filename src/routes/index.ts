@@ -4,9 +4,13 @@
 
 import { Router } from 'express';
 import { validateLTILaunch } from '../middleware/ltiAuth';
-import { handleLaunch } from '../controllers/ltiController';
+import { 
+  handleLaunchQuiz1, 
+  handleLaunchQuiz2, 
+  handleLaunchQuiz3,
+  handleLaunchQuiz4
+} from '../controllers/ltiController';
 import { getStats, getQuizStatus } from '../controllers/quizController';
-import { handleEmbed } from '../controllers/embedController';
 
 const router = Router();
 
@@ -15,11 +19,11 @@ router.get('/health', (_req, res) => {
   res.json({ ok: true, message: 'Quiz Monitor Backend is running' });
 });
 
-// Embed endpoint (sin validación LTI)
-router.get('/embed', handleEmbed);
-
-// LTI Routes
-router.post('/lti/launch', validateLTILaunch, handleLaunch);
+// LTI Routes - Una ruta por cada conjunto de quizzes
+router.post('/lti/launch/quiz1', validateLTILaunch, handleLaunchQuiz1);
+router.post('/lti/launch/quiz2', validateLTILaunch, handleLaunchQuiz2);
+router.post('/lti/launch/quiz3', validateLTILaunch, handleLaunchQuiz3);
+router.post('/lti/launch/quiz4', validateLTILaunch, handleLaunchQuiz4);
 
 // API Routes
 router.get('/api/stats/:userId', getStats);
