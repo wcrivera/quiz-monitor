@@ -1,5 +1,5 @@
 // ============================================================================
-// SERVER - QUIZ MONITOR BACKEND
+// SERVER - QUIZ MONITOR BACKEND CON CALIPER
 // ============================================================================
 
 import express, { Application } from 'express';
@@ -23,9 +23,14 @@ const httpServer = createServer(app);
 
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: process.env.FRONTEND_URL || '*',
+    origin: [
+      'https://cursos.canvas.uc.cl',
+      'https://sso.canvaslms.com',
+      process.env.FRONTEND_URL || '*'
+    ],
     methods: ['GET', 'POST'],
-    credentials: true
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
   },
   transports: ['websocket', 'polling']
 });
@@ -33,22 +38,48 @@ const io = new SocketIOServer(httpServer, {
 initializeSocket(io);
 console.log('✅ Socket.io inicializado');
 
+// CORS configurado para Canvas
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
-  credentials: true
+  origin: [
+    'https://cursos.canvas.uc.cl',
+    'https://sso.canvaslms.com',
+    process.env.FRONTEND_URL || '*'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
+
+// Headers adicionales para iframes
+app.use((req, res, next) => {
+  res.setHeader('X-Frame-Options', 'ALLOW-FROM https://cursos.canvas.uc.cl');
+  res.setHeader('Content-Security-Policy', "frame-ancestors 'self' https://cursos.canvas.uc.cl https://sso.canvaslms.com");
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Routes ANTES de static files
+app.use(routes);
+
+// Static files
 const publicPath = path.join(__dirname, '../public');
 app.use(express.static(publicPath));
 console.log('📁 Sirviendo archivos estáticos desde:', publicPath);
 
-app.use(routes);
-
-app.get('/monitor', (_req, res) => {
-  const indexPath = path.join(publicPath, 'index.html');
-  res.sendFile(indexPath);
+// Ruta catch-all para SPA
+app.get('*', (req, res) => {
+  if (!req.path.startsWith('/api') && 
+      !req.path.startsWith('/lti') && 
+      !req.path.startsWith('/caliper') &&
+      !req.path.startsWith('/health') &&
+      !req.path.startsWith('/config.xml')) {
+    const indexPath = path.join(publicPath, 'index.html');
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).json({ error: 'Not found' });
+  }
 });
 
 app.use(errorHandler);
@@ -60,8 +91,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/quiz-moni
     
     canvasService.initialize();
     
-    // Polling deshabilitado - usamos webhooks
-    console.log('📨 Canvas Webhooks: Activo');
+    console.log('📨 Canvas Caliper Analytics: Activo');
     console.log('⚠️ Polling: Deshabilitado (usando webhooks)');
   })
   .catch((error) => {
@@ -71,12 +101,12 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/quiz-moni
 httpServer.listen(PORT, () => {
   console.log('');
   console.log('═══════════════════════════════════════════════════════════');
-  console.log('🚀 QUIZ MONITOR BACKEND v2.0 - WEBHOOKS');
+  console.log('🚀 QUIZ MONITOR BACKEND v2.0 - CALIPER ANALYTICS');
   console.log('═══════════════════════════════════════════════════════════');
   console.log(`📍 Servidor:     http://localhost:${PORT}`);
   console.log(`🔗 Health:       http://localhost:${PORT}/health`);
   console.log(`🎯 LTI Launch:   http://localhost:${PORT}/lti/launch`);
-  console.log(`📨 Webhook:      http://localhost:${PORT}/webhooks/canvas`);
+  console.log(`📨 Caliper:      http://localhost:${PORT}/caliper`);
   console.log('═══════════════════════════════════════════════════════════');
   console.log('');
 });
