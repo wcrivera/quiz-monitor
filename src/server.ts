@@ -1,5 +1,5 @@
 // ============================================================================
-// SERVER - QUIZ MONITOR BACKEND CON CALIPER
+// SERVER - QUIZ MONITOR BACKEND
 // ============================================================================
 
 import express, { Application } from 'express';
@@ -40,27 +40,15 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// IMPORTANTE: Routes ANTES de static files
-app.use(routes);
-
-// Static files
 const publicPath = path.join(__dirname, '../public');
 app.use(express.static(publicPath));
 console.log('📁 Sirviendo archivos estáticos desde:', publicPath);
 
-// Ruta catch-all para SPA - DEBE IR AL FINAL
-app.get('*', (req, res) => {
-  // Solo servir index.html para rutas que no sean API
-  if (!req.path.startsWith('/api') && 
-      !req.path.startsWith('/lti') && 
-      !req.path.startsWith('/caliper') &&
-      !req.path.startsWith('/health') &&
-      !req.path.startsWith('/config.xml')) {
-    const indexPath = path.join(publicPath, 'index.html');
-    res.sendFile(indexPath);
-  } else {
-    res.status(404).json({ error: 'Not found' });
-  }
+app.use(routes);
+
+app.get('/monitor', (_req, res) => {
+  const indexPath = path.join(publicPath, 'index.html');
+  res.sendFile(indexPath);
 });
 
 app.use(errorHandler);
@@ -72,7 +60,8 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/quiz-moni
     
     canvasService.initialize();
     
-    console.log('📨 Canvas Caliper Analytics: Activo');
+    // Polling deshabilitado - usamos webhooks
+    console.log('📨 Canvas Webhooks: Activo');
     console.log('⚠️ Polling: Deshabilitado (usando webhooks)');
   })
   .catch((error) => {
@@ -82,12 +71,12 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/quiz-moni
 httpServer.listen(PORT, () => {
   console.log('');
   console.log('═══════════════════════════════════════════════════════════');
-  console.log('🚀 QUIZ MONITOR BACKEND v2.0 - CALIPER ANALYTICS');
+  console.log('🚀 QUIZ MONITOR BACKEND v2.0 - WEBHOOKS');
   console.log('═══════════════════════════════════════════════════════════');
   console.log(`📍 Servidor:     http://localhost:${PORT}`);
   console.log(`🔗 Health:       http://localhost:${PORT}/health`);
   console.log(`🎯 LTI Launch:   http://localhost:${PORT}/lti/launch`);
-  console.log(`📨 Caliper:      http://localhost:${PORT}/caliper`);
+  console.log(`📨 Webhook:      http://localhost:${PORT}/webhooks/canvas`);
   console.log('═══════════════════════════════════════════════════════════');
   console.log('');
 });

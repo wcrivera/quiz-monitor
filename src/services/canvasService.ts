@@ -1,5 +1,5 @@
 // ============================================================================
-// CANVAS API SERVICE - SIN POLLING (USA CALIPER)
+// CANVAS API SERVICE - SIN POLLING (USA WEBHOOKS)
 // ============================================================================
 
 import axios, { AxiosInstance } from 'axios';
@@ -28,7 +28,7 @@ export const initialize = (): void => {
   });
 
   console.log('✅ Canvas API: Configurado');
-  console.log('📨 Usando Caliper Analytics (polling deshabilitado)');
+  console.log('📨 Usando Canvas Webhooks (polling deshabilitado)');
 };
 
 /**
@@ -44,11 +44,6 @@ export const isReady = (): boolean => {
 export const getQuiz = async (courseId: string, quizId: string): Promise<CanvasQuiz | null> => {
   if (!canvasClient) {
     console.error('❌ Canvas client no inicializado');
-    return null;
-  }
-
-  if (!courseId || !quizId) {
-    console.error('❌ courseId o quizId faltante');
     return null;
   }
 
@@ -70,11 +65,6 @@ export const getQuizSubmissions = async (
 ): Promise<QuizSubmission[]> => {
   if (!canvasClient) {
     console.error('❌ Canvas client no inicializado');
-    return [];
-  }
-
-  if (!courseId || !quizId) {
-    console.error('❌ courseId o quizId faltante');
     return [];
   }
 
@@ -105,11 +95,6 @@ export const getUserQuizSubmissions = async (
   userId: string,
   quizIds: string[]
 ): Promise<Array<{ quizId: string; submission: QuizSubmission | null; quiz: CanvasQuiz | null }>> => {
-  if (!courseId) {
-    console.error('❌ courseId es requerido');
-    return [];
-  }
-
   const results = [];
 
   for (const quizId of quizIds) {
@@ -127,9 +112,9 @@ export const getUserQuizSubmissions = async (
   return results;
 };
 
-// Polling deshabilitado
+// Polling deshabilitado - ahora usamos webhooks
 export const startPolling = (): void => {
-  console.log('⚠️ Polling deshabilitado - usando Caliper Analytics');
+  console.log('⚠️ Polling deshabilitado - usando Canvas Webhooks');
 };
 
 export const stopPolling = (): void => {

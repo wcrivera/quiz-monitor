@@ -3,11 +3,10 @@
 // ============================================================================
 
 import { Router } from 'express';
-import path from 'path';
 import { validateLTILaunch } from '../middleware/ltiAuth';
 import { handleLaunch } from '../controllers/ltiController';
 import { getStats, getQuizStatus } from '../controllers/quizController';
-import { handleCaliperEvent, verifyCaliperEndpoint } from '../controllers/caliperController';
+import { handleCanvasWebhook, verifyWebhook } from '../controllers/webhookController';
 
 const router = Router();
 
@@ -16,17 +15,11 @@ router.get('/health', (_req, res) => {
   res.json({ ok: true, message: 'Quiz Monitor Backend is running' });
 });
 
-// Caliper Analytics endpoints
-router.post('/caliper', handleCaliperEvent);
-router.get('/caliper', verifyCaliperEndpoint);
+// Webhook endpoints
+router.post('/webhooks/canvas', handleCanvasWebhook);
+router.get('/webhooks/canvas', verifyWebhook);
 
-// XML Config para Canvas
-router.get('/config.xml', (_req, res) => {
-  const xmlPath = path.join(__dirname, '../../public/caliper-config.xml');
-  res.sendFile(xmlPath);
-});
-
-// LTI Routes
+// LTI Route con parámetro dinámico
 router.post('/lti/launch/:quizIds', validateLTILaunch, handleLaunch);
 router.post('/lti/launch', validateLTILaunch, handleLaunch);
 
