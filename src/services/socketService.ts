@@ -49,6 +49,7 @@ export const emitQuizUpdate = (userId: string, quizId: string, data: any): void 
   }
 
   console.log(`📡 Intentando emitir actualización para userId: ${userId}, quizId: ${quizId}`);
+  console.log(`📦 Data a emitir:`, data);
 
   // Obtener todas las salas activas
   const rooms = Array.from(io.sockets.adapter.rooms.keys());
@@ -58,15 +59,16 @@ export const emitQuizUpdate = (userId: string, quizId: string, data: any): void 
 
   // Emitir a todas las salas que coincidan
   rooms.forEach(roomName => {
-    // Verificar si el room contiene este userId y quizId
     if (roomName.includes(userId) && roomName.includes(quizId)) {
-      console.log(`📡 Emitiendo a room: ${roomName}`);
+      console.log(`📡 Emitiendo 'quiz-update' a room: ${roomName}`);
       io.to(roomName).emit('quiz-update', data);
       emitted = true;
     }
   });
 
   if (!emitted) {
-    console.log('⚠️ No se emitió a ninguna sala');
+    console.log('⚠️ No se emitió a ninguna sala - ninguna coincidió');
+  } else {
+    console.log(`✅ Evento 'quiz-update' emitido correctamente`);
   }
 };
