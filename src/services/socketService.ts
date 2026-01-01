@@ -1,20 +1,12 @@
 // ============================================================================
-// SOCKET.IO SERVICE - SESIONES ÚNICAS POR IFRAME
+// SOCKET SERVICE - CORREGIDO
 // ============================================================================
 
 import { Server as SocketIOServer, Socket } from 'socket.io';
 
-let io: SocketIOServer | null = null;
-
-// Mapa para trackear qué socket maneja qué quizzes
-const socketQuizMap = new Map<string, { userId: string; quizIds: string[] }>();
+let io: SocketIOServer;
 
 export const initializeSocket = (socketServer: SocketIOServer): void => {
-  if (io) {
-    console.log('⚠️  Socket.io ya inicializado, omitiendo...');
-    return;
-  }
-
   io = socketServer;
 
   io.on('connection', (socket: Socket) => {
@@ -22,37 +14,21 @@ export const initializeSocket = (socketServer: SocketIOServer): void => {
     const quizIds = socket.handshake.query.quizIds as string;
 
     if (!userId || !quizIds) {
-      console.log('❌ Conexión rechazada: falta userId o quizIds');
-      socket.disconnect();
+      console.log('⚠️ Conexión sin userId o quizIds');
       return;
     }
 
-    // Crear ID único de room: userId-quizId1-quizId2-quizId3 (ordenados)
-    const sortedQuizIds = quizIds
-      .split(',')
-      .map(id => id.trim())
-      .sort();
-    
-    const uniqueRoomId = `${userId}-${sortedQuizIds.join('-')}`;
-    
-    // Unir socket a la room única
-    socket.join(uniqueRoomId);
-    
-    // Guardar mapping para este socket
-    socketQuizMap.set(socket.id, {
-      userId,
-      quizIds: sortedQuizIds
-    });
+    const room = `${userId}-${quizIds}`;
+    socket.join(room);
 
-    console.log(`🔌 Iframe conectado:`);
-    console.log(`   🆔 Socket ID: ${socket.id}`);
-    console.log(`   🏠 Room: ${uniqueRoomId}`);
-    console.log(`   👤 Usuario: ${userId}`);
-    console.log(`   📊 Quizzes: ${quizIds}`);
+    console.log('🔌 Iframe conectado:');
+    console.log('🆔 Socket ID:', socket.id);
+    console.log('🏠 Room:', room);
+    console.log('👤 Usuario:', userId);
+    console.log('📊 Quizzes:', quizIds);
 
     socket.on('disconnect', () => {
-      console.log(`🔌 Iframe desconectado: ${socket.id}`);
-      socketQuizMap.delete(socket.id);
+      console.log('🔌 Iframe desconectado:', socket.id);
     });
   });
 
@@ -61,38 +37,36 @@ export const initializeSocket = (socketServer: SocketIOServer): void => {
 
 export const getIO = (): SocketIOServer => {
   if (!io) {
-    throw new Error('Socket.io no ha sido inicializado');
+    throw new Error('Socket.io no inicializado');
   }
   return io;
 };
 
-/**
- * Emitir actualización de quiz a TODOS los iframes que lo monitorean
- */
 export const emitQuizUpdate = (userId: string, quizId: string, data: any): void => {
   if (!io) {
-    console.error('❌ Socket.io no inicializado');
+    console.error('❌ Socket.io no disponible para emitir');
     return;
   }
 
-  let emittedCount = 0;
+  console.log(`📡 Intentando emitir actualización para userId: ${userId}, quizId: ${quizId}`);
 
-  // Iterar sobre todos los sockets conectados
-  socketQuizMap.forEach((socketData, socketId) => {
-    // Verificar si este socket pertenece al usuario y monitorea el quiz
-    if (socketData.userId === userId && socketData.quizIds.includes(quizId)) {
-      // Emitir al socket específico
-      io!.to(socketId).emit('quiz-updated', data);
-      emittedCount++;
-      
-      const roomId = `${userId}-${socketData.quizIds.join('-')}`;
-      console.log(`   ⚡ → Room ${roomId}`);
+  // Obtener todas las salas activas
+  const rooms = Array.from(io.sockets.adapter.rooms.keys());
+  console.log('🏠 Salas activas:', rooms);
+
+  let emitted = false;
+
+  // Emitir a todas las salas que coincidan
+  rooms.forEach(roomName => {
+    // Verificar si el room contiene este userId y quizId
+    if (roomName.includes(userId) && roomName.includes(quizId)) {
+      console.log(`📡 Emitiendo a room: ${roomName}`);
+      io.to(roomName).emit('quiz-update', data);
+      emitted = true;
     }
   });
 
-  if (emittedCount > 0) {
-    console.log(`📤 Quiz ${quizId} actualizado → ${emittedCount} iframe(s) de usuario ${userId}`);
-  } else {
-    console.log(`⚠️  Quiz ${quizId} - Usuario ${userId} no tiene iframes conectados`);
+  if (!emitted) {
+    console.log('⚠️ No se emitió a ninguna sala');
   }
 };
