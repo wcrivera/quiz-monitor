@@ -89,7 +89,7 @@ const QuizResultSchema = new Schema<IQuizResult>({
 // Permite múltiples intentos del mismo quiz por el mismo usuario
 QuizResultSchema.index(
   { userId: 1, quizId: 1, attempt: 1 }, 
-  { unique: false }
+  { unique: true }
 );
 
 // Índice compuesto para búsquedas eficientes
