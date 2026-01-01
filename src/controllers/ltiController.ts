@@ -1,11 +1,12 @@
 // ============================================================================
-// LTI CONTROLLER - CON CALIPER ANALYTICS
+// LTI CONTROLLER - CON PARÁMETROS DINÁMICOS
 // ============================================================================
 
 import { Request, Response } from 'express';
 
 /**
  * Manejar LTI Launch con quiz_ids desde parámetro de ruta
+ * Ejemplo: /lti/launch/193158,193190
  */
 export const handleLaunch = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -14,27 +15,29 @@ export const handleLaunch = async (req: Request, res: Response): Promise<void> =
       user_id,
       lis_person_name_full,
       custom_canvas_course_id,
-      context_id,
-      lis_outcome_service_url,
-      tool_consumer_instance_guid
+      context_id
     } = req.body;
 
+    // Leer quiz_ids del parámetro de ruta
     const quizIdsParam = req.params.quizIds || req.params[0];
     
     console.log('📝 Procesando LTI Launch...');
     console.log('👤 Usuario:', lis_person_name_full);
     console.log('🆔 Canvas User ID:', custom_canvas_user_id);
+    console.log('📚 Course ID:', custom_canvas_course_id || context_id);
     console.log('📊 Quiz IDs (param):', quizIdsParam);
-    console.log('🔗 Tool Consumer:', tool_consumer_instance_guid);
 
     const canvasUserId = custom_canvas_user_id || user_id;
+    const courseId = custom_canvas_course_id || context_id || '90302';
 
     let quizIds: string[] = [];
     
     if (quizIdsParam) {
+      // Parsear quiz_ids del parámetro (pueden venir separados por comas)
       quizIds = quizIdsParam.split(',').map(id => id.trim()).filter(Boolean);
       console.log('✅ Usando quiz_ids del parámetro de ruta:', quizIds);
     } else {
+      // Fallback a .env
       const monitoredQuizzes = process.env.MONITORED_QUIZZES || '';
       quizIds = monitoredQuizzes.split(',').map(pair => {
         const [, quizId] = pair.trim().split(':');
@@ -49,7 +52,7 @@ export const handleLaunch = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    const frontendUrl = `/monitor?user_id=${canvasUserId}&quiz_ids=${quizIds.join(',')}`;
+    const frontendUrl = `/monitor?user_id=${canvasUserId}&course_id=${courseId}&quiz_ids=${quizIds.join(',')}`;
     console.log('🔄 Redirigiendo a:', frontendUrl);
 
     res.redirect(frontendUrl);

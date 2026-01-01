@@ -19,7 +19,6 @@
         <lticm:property name="privacy_level">public</lticm:property>
         <lticm:property name="domain">lti-canvas-mat1000-monitor-ce5a1c63f41c.herokuapp.com</lticm:property>
         
-        <!-- Configuración de Caliper -->
         <lticm:property name="caliper_enabled">true</lticm:property>
         <lticm:property name="caliper_url">https://lti-canvas-mat1000-monitor-ce5a1c63f41c.herokuapp.com/caliper</lticm:property>
         

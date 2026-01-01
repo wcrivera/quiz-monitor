@@ -3,7 +3,6 @@
 // ============================================================================
 
 import { Router } from 'express';
-import path from 'path';
 import { validateLTILaunch } from '../middleware/ltiAuth';
 import { handleLaunch } from '../controllers/ltiController';
 import { getStats, getQuizStatus } from '../controllers/quizController';
@@ -27,10 +26,5 @@ router.post('/lti/launch', validateLTILaunch, handleLaunch);
 // API Routes
 router.get('/api/stats/:userId', getStats);
 router.get('/api/quiz-status', getQuizStatus);
-
-// Servir configuración XML
-router.get('/config.xml', (_req, res) => {
-  res.sendFile(path.join(__dirname, '../../public/caliper-config.xml'));
-});
 
 export default router;

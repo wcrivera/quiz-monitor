@@ -12,23 +12,14 @@ import { getUserQuizSubmissions } from '../services/canvasService';
 export const getStats = async (req: Request, res: Response): Promise<void> => {
   try {
     const { userId } = req.params;
-
-    if (!userId) {
-      res.status(400).json({
-        ok: false,
-        error: 'userId requerido'
-      });
-      return;
-    }
+    
+    console.log(`📊 Stats Request: User ${userId}`);
 
     const stats = await getStudentStats(userId);
 
-    res.json({
-      ok: true,
-      data: stats
-    });
+    res.json(stats);
   } catch (error) {
-    console.error('❌ Error en getStats:', error);
+    console.error('❌ Error obteniendo stats:', error);
     res.status(500).json({
       ok: false,
       error: 'Error obteniendo estadísticas'
@@ -37,56 +28,90 @@ export const getStats = async (req: Request, res: Response): Promise<void> => {
 };
 
 /**
- * Obtener estado de quizzes para un usuario
- * Combina datos de MongoDB (caché) y Canvas API (source of truth)
+ * Obtener estado de quizzes específicos
  */
 export const getQuizStatus = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { user_id, quiz_ids } = req.query;
+    const userId = req.query.user_id as string;
+    const quizIdsParam = req.query.quiz_ids as string;
+    
+    console.log('📊 Quiz Status Request:');
+    console.log('👤 User:', userId);
+    console.log('📋 Quizzes:', quizIdsParam);
 
-    if (!user_id || !quiz_ids) {
+    if (!userId || !quizIdsParam) {
       res.status(400).json({
         ok: false,
-        error: 'user_id y quiz_ids requeridos'
+        error: 'Missing user_id or quiz_ids'
       });
       return;
     }
 
-    const userId = user_id as string;
-    const quizIdsArray = (quiz_ids as string).split(',').map(id => id.trim());
+    const quizIds = quizIdsParam.split(',').map(id => id.trim());
 
-    console.log(`📊 Quiz Status Request:`);
-    console.log(`   👤 User: ${userId}`);
-    console.log(`   📋 Quizzes: ${quizIdsArray.join(', ')}`);
+    // Extraer courseId del MONITORED_QUIZZES o usar default
+    const monitoredQuizzes = process.env.MONITORED_QUIZZES || '';
+    const firstPair = monitoredQuizzes.split(',')[0];
+    const courseId = firstPair ? firstPair.trim().split(':')[0] : '90302';
 
-    // 1. Obtener datos de MongoDB (histórico/caché)
-    const mongoResults = await getStudentQuizResults(userId, quizIdsArray);
+    console.log('📚 Course ID:', courseId);
 
-    // 2. Obtener datos de Canvas API (actualizado)
-    const courseId = process.env.MONITORED_QUIZZES?.split(',')[0]?.split(':')[0] || '';
-    const canvasResults = await getUserQuizSubmissions(courseId, userId, quizIdsArray);
+    // Obtener resultados de MongoDB
+    const dbResults = await getStudentQuizResults(userId, quizIds);
+    
+    // Obtener datos actualizados de Canvas API
+    const canvasResults = await getUserQuizSubmissions(courseId, userId, quizIds);
 
-    // 3. Combinar y formatear respuesta
-    const combinedResults = quizIdsArray.map(quizId => {
-      const canvasData = canvasResults.find(r => r.quizId === quizId);
-      const mongoData = mongoResults.find(r => r.quizId === quizId);
+    // Combinar resultados
+    const combined = quizIds.map(quizId => {
+      const dbResult = dbResults.find(r => r.quizId === quizId);
+      const canvasResult = canvasResults.find(r => r.quizId === quizId);
 
+      // Si hay datos de Canvas, usarlos (son más recientes)
+      if (canvasResult?.submission) {
+        return {
+          quizId,
+          quizTitle: canvasResult.quiz?.title || dbResult?.quizTitle || 'Quiz',
+          status: canvasResult.submission.workflow_state,
+          score: canvasResult.submission.score || 0,
+          possiblePoints: canvasResult.submission.quiz_points_possible || 0,
+          attempt: canvasResult.submission.attempt || 1,
+          submittedAt: canvasResult.submission.submitted_at || canvasResult.submission.finished_at
+        };
+      }
+
+      // Fallback a datos de MongoDB
+      if (dbResult) {
+        return {
+          quizId,
+          quizTitle: dbResult.quizTitle,
+          status: dbResult.workflowState,
+          score: dbResult.score,
+          possiblePoints: dbResult.possiblePoints,
+          attempt: dbResult.attempt,
+          submittedAt: dbResult.submittedAt
+        };
+      }
+
+      // No hay datos
       return {
         quizId,
-        quizTitle: canvasData?.quiz?.title || mongoData?.quizTitle || 'Quiz',
-        currentSubmission: canvasData?.submission || null,
-        lastResult: mongoData || null,
-        fromCache: !!mongoData
+        quizTitle: canvasResult?.quiz?.title || 'Quiz',
+        status: 'not_started',
+        score: 0,
+        possiblePoints: canvasResult?.quiz?.points_possible || 0,
+        attempt: 0,
+        submittedAt: null
       };
     });
 
     res.json({
       ok: true,
-      data: combinedResults
+      results: combined
     });
 
   } catch (error) {
-    console.error('❌ Error en getQuizStatus:', error);
+    console.error('❌ Error en quiz status:', error);
     res.status(500).json({
       ok: false,
       error: 'Error obteniendo estado de quizzes'

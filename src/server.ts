@@ -1,5 +1,5 @@
 // ============================================================================
-// SERVER - QUIZ MONITOR BACKEND
+// SERVER - QUIZ MONITOR BACKEND CON CALIPER
 // ============================================================================
 
 import express, { Application } from 'express';
@@ -60,8 +60,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/quiz-moni
     
     canvasService.initialize();
     
-    // Polling deshabilitado - usamos webhooks
-    console.log('📨 Canvas Webhooks: Activo');
+    console.log('📨 Canvas Caliper Analytics: Activo');
     console.log('⚠️ Polling: Deshabilitado (usando webhooks)');
   })
   .catch((error) => {
@@ -71,12 +70,12 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/quiz-moni
 httpServer.listen(PORT, () => {
   console.log('');
   console.log('═══════════════════════════════════════════════════════════');
-  console.log('🚀 QUIZ MONITOR BACKEND v2.0 - WEBHOOKS');
+  console.log('🚀 QUIZ MONITOR BACKEND v2.0 - CALIPER ANALYTICS');
   console.log('═══════════════════════════════════════════════════════════');
   console.log(`📍 Servidor:     http://localhost:${PORT}`);
   console.log(`🔗 Health:       http://localhost:${PORT}/health`);
   console.log(`🎯 LTI Launch:   http://localhost:${PORT}/lti/launch`);
-  console.log(`📨 Webhook:      http://localhost:${PORT}/webhooks/canvas`);
+  console.log(`📨 Caliper:      http://localhost:${PORT}/caliper`);
   console.log('═══════════════════════════════════════════════════════════');
   console.log('');
 });

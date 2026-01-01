@@ -12,6 +12,7 @@ import { getQuiz } from '../services/canvasService';
 export const handleCaliperEvent = async (req: Request, res: Response): Promise<void> => {
   try {
     console.log('📨 Evento Caliper recibido');
+    console.log('📦 Body completo:', JSON.stringify(req.body, null, 2));
     
     const events = Array.isArray(req.body) ? req.body : [req.body];
     
@@ -37,10 +38,9 @@ export const handleCaliperEvent = async (req: Request, res: Response): Promise<v
  */
 const processCaliperAssessmentEvent = async (event: any): Promise<void> => {
   try {
-    // Extraer datos del evento Caliper
-    const actor = event.actor; // Estudiante
-    const object = event.object; // Quiz/Assignment
-    const generated = event.generated; // Resultado/Score
+    const actor = event.actor;
+    const object = event.object;
+    const generated = event.generated;
     
     console.log('🎯 Actor:', actor?.id);
     console.log('📝 Object:', object?.id);
@@ -52,7 +52,6 @@ const processCaliperAssessmentEvent = async (event: any): Promise<void> => {
       return;
     }
 
-    // Extraer IDs de Canvas
     const actorId = extractCanvasId(actor?.id);
     const objectId = extractCanvasId(object?.id);
     
@@ -61,9 +60,11 @@ const processCaliperAssessmentEvent = async (event: any): Promise<void> => {
       return;
     }
 
-    // Obtener información del quiz desde Canvas API
     const courseId = extractCourseId(object?.id) || 
-                     process.env.MONITORED_QUIZZES?.split(',')[0]?.split(':')[0] || '';
+                     process.env.MONITORED_QUIZZES?.split(',')[0]?.split(':')[0] || 
+                     '90302';
+    
+    console.log('📚 Course ID extraído:', courseId);
     
     const quiz = await getQuiz(courseId, objectId);
     
@@ -72,7 +73,6 @@ const processCaliperAssessmentEvent = async (event: any): Promise<void> => {
       return;
     }
 
-    // Construir objeto submission compatible
     const submission = {
       id: Date.now(),
       quiz_id: parseInt(objectId),
@@ -88,7 +88,6 @@ const processCaliperAssessmentEvent = async (event: any): Promise<void> => {
       submitted_at: event.eventTime
     };
 
-    // Procesar submission
     await processQuizSubmission(submission, quiz.title, courseId);
     
     console.log('✅ Evento Caliper procesado exitosamente');
@@ -100,7 +99,6 @@ const processCaliperAssessmentEvent = async (event: any): Promise<void> => {
 
 /**
  * Extraer ID numérico de Canvas desde URI
- * Ejemplo: "https://cursos.canvas.uc.cl/users/13656" -> "13656"
  */
 const extractCanvasId = (uri: string | undefined): string | null => {
   if (!uri) return null;
