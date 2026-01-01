@@ -23,14 +23,9 @@ const httpServer = createServer(app);
 
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: [
-      'https://cursos.canvas.uc.cl',
-      'https://sso.canvaslms.com',
-      process.env.FRONTEND_URL || '*'
-    ],
+    origin: '*',
     methods: ['GET', 'POST'],
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization']
+    credentials: true
   },
   transports: ['websocket', 'polling']
 });
@@ -38,22 +33,15 @@ const io = new SocketIOServer(httpServer, {
 initializeSocket(io);
 console.log('✅ Socket.io inicializado');
 
-// CORS configurado para Canvas
+// CORS abierto para Canvas
 app.use(cors({
-  origin: [
-    'https://cursos.canvas.uc.cl',
-    'https://sso.canvaslms.com',
-    process.env.FRONTEND_URL || '*'
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  origin: '*',
+  credentials: true
 }));
 
-// Headers adicionales para iframes
+// NO setear X-Frame-Options para permitir iframes
 app.use((req, res, next) => {
-  res.setHeader('X-Frame-Options', 'ALLOW-FROM https://cursos.canvas.uc.cl');
-  res.setHeader('Content-Security-Policy', "frame-ancestors 'self' https://cursos.canvas.uc.cl https://sso.canvaslms.com");
+  res.removeHeader('X-Frame-Options');
   next();
 });
 
