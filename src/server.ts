@@ -40,15 +40,27 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// IMPORTANTE: Routes ANTES de static files
+app.use(routes);
+
+// Static files
 const publicPath = path.join(__dirname, '../public');
 app.use(express.static(publicPath));
 console.log('📁 Sirviendo archivos estáticos desde:', publicPath);
 
-app.use(routes);
-
-app.get('/monitor', (_req, res) => {
-  const indexPath = path.join(publicPath, 'index.html');
-  res.sendFile(indexPath);
+// Ruta catch-all para SPA - DEBE IR AL FINAL
+app.get('*', (req, res) => {
+  // Solo servir index.html para rutas que no sean API
+  if (!req.path.startsWith('/api') && 
+      !req.path.startsWith('/lti') && 
+      !req.path.startsWith('/caliper') &&
+      !req.path.startsWith('/health') &&
+      !req.path.startsWith('/config.xml')) {
+    const indexPath = path.join(publicPath, 'index.html');
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).json({ error: 'Not found' });
+  }
 });
 
 app.use(errorHandler);

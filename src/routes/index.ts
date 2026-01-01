@@ -3,6 +3,7 @@
 // ============================================================================
 
 import { Router } from 'express';
+import path from 'path';
 import { validateLTILaunch } from '../middleware/ltiAuth';
 import { handleLaunch } from '../controllers/ltiController';
 import { getStats, getQuizStatus } from '../controllers/quizController';
@@ -18,6 +19,12 @@ router.get('/health', (_req, res) => {
 // Caliper Analytics endpoints
 router.post('/caliper', handleCaliperEvent);
 router.get('/caliper', verifyCaliperEndpoint);
+
+// XML Config para Canvas
+router.get('/config.xml', (_req, res) => {
+  const xmlPath = path.join(__dirname, '../../public/caliper-config.xml');
+  res.sendFile(xmlPath);
+});
 
 // LTI Routes
 router.post('/lti/launch/:quizIds', validateLTILaunch, handleLaunch);
