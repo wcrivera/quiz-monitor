@@ -1,5 +1,5 @@
 // ============================================================================
-// QUIZ MONITOR SERVICE
+// QUIZ MONITOR SERVICE - MÚLTIPLES INTENTOS
 // ============================================================================
 
 import QuizResult from '../models/QuizResult';
@@ -8,6 +8,7 @@ import { QuizSubmission } from '../types';
 
 /**
  * Procesar submission de Canvas y guardar en BD
+ * Permite múltiples intentos
  */
 export const processQuizSubmission = async (
   submission: QuizSubmission,
@@ -17,16 +18,41 @@ export const processQuizSubmission = async (
   try {
     const userId = submission.user_id.toString();
     const quizId = submission.quiz_id.toString();
+    const attempt = submission.attempt || 1;
 
-    // Verificar si ya existe
+    console.log(`🔄 Procesando submission: Usuario ${userId}, Quiz ${quizId}, Intento ${attempt}`);
+
+    // Verificar si ya existe este intento específico
     const existing = await QuizResult.findOne({
       userId,
       quizId,
-      attempt: submission.attempt
+      attempt
     });
 
     if (existing) {
-      console.log(`⚠️  Submission ya existe: Usuario ${userId} - Intento ${submission.attempt}`);
+      console.log(`⚠️ Intento ${attempt} ya existe, actualizando...`);
+      
+      // Actualizar el existente
+      existing.score = submission.score || 0;
+      existing.possiblePoints = submission.quiz_points_possible || 0;
+      existing.percentageScore = ((submission.score || 0) / (submission.quiz_points_possible || 1)) * 100;
+      existing.submittedAt = new Date(submission.finished_at || submission.submitted_at || Date.now());
+      existing.workflowState = submission.workflow_state;
+      
+      await existing.save();
+      
+      // Emitir actualización
+      emitQuizUpdate(userId, quizId, {
+        userId,
+        quizId,
+        quizTitle,
+        score: existing.score,
+        possiblePoints: existing.possiblePoints,
+        percentageScore: existing.percentageScore,
+        submittedAt: existing.submittedAt,
+        attempt: existing.attempt
+      });
+      
       return existing;
     }
 
@@ -39,7 +65,7 @@ export const processQuizSubmission = async (
       possiblePoints: submission.quiz_points_possible || 0,
       percentageScore: ((submission.score || 0) / (submission.quiz_points_possible || 1)) * 100,
       submittedAt: new Date(submission.finished_at || submission.submitted_at || Date.now()),
-      attempt: submission.attempt || 1,
+      attempt,
       workflowState: submission.workflow_state,
       submissionId: submission.submission_id?.toString() || submission.id.toString(),
       courseId: courseId,
@@ -49,9 +75,9 @@ export const processQuizSubmission = async (
 
     await quizResult.save();
 
-    console.log(`✅ Quiz result guardado: ${quizTitle} - Usuario ${userId}`);
+    console.log(`✅ Quiz result guardado: ${quizTitle} - Usuario ${userId} - Intento ${attempt}`);
 
-    // Emitir a Socket.io a TODOS los iframes que monitorean este quiz
+    // Emitir a Socket.io
     emitQuizUpdate(userId, quizId, {
       userId,
       quizId,
@@ -60,17 +86,11 @@ export const processQuizSubmission = async (
       possiblePoints: submission.quiz_points_possible || 0,
       percentageScore: quizResult.percentageScore,
       submittedAt: quizResult.submittedAt,
-      attempt: submission.attempt || 1
+      attempt
     });
 
     return quizResult;
   } catch (error: any) {
-    // Si es error de duplicado (E11000), ignorar silenciosamente
-    if (error.code === 11000) {
-      console.log(`⚠️  Submission duplicada ignorada: Usuario ${submission.user_id} - Intento ${submission.attempt}`);
-      return null;
-    }
-    
     console.error('❌ Error procesando submission:', error);
     throw error;
   }
@@ -78,20 +98,41 @@ export const processQuizSubmission = async (
 
 /**
  * Obtener estadísticas de un estudiante
+ * Calcula correctamente completados vs en progreso
  */
 export const getStudentStats = async (userId: string) => {
   try {
-    const results = await QuizResult.find({ userId });
+    // Obtener todos los resultados del usuario
+    const results = await QuizResult.find({ userId }).sort({ submittedAt: -1 });
 
-    const completados = results.length;
-    const totalPoints = results.reduce((sum, r) => sum + r.score, 0);
-    const totalPossible = results.reduce((sum, r) => sum + r.possiblePoints, 0);
+    // Agrupar por quizId y obtener el último intento de cada uno
+    const quizMap = new Map<string, typeof results[0]>();
+    
+    results.forEach(result => {
+      const existing = quizMap.get(result.quizId);
+      if (!existing || result.attempt > existing.attempt) {
+        quizMap.set(result.quizId, result);
+      }
+    });
+
+    const latestResults = Array.from(quizMap.values());
+
+    // Calcular stats
+    const completados = latestResults.filter(r => r.workflowState === 'complete').length;
+    const enProgreso = latestResults.filter(r => 
+      r.workflowState === 'pending_review' || 
+      r.workflowState === 'untaken'
+    ).length;
+
+    const completedResults = latestResults.filter(r => r.workflowState === 'complete');
+    const totalPoints = completedResults.reduce((sum, r) => sum + r.score, 0);
+    const totalPossible = completedResults.reduce((sum, r) => sum + r.possiblePoints, 0);
     const promedio = totalPossible > 0 ? (totalPoints / totalPossible) * 100 : 0;
 
     return {
       completados,
-      enProgreso: 0,
-      totalQuizzes: completados,
+      enProgreso,
+      totalQuizzes: latestResults.length,
       promedio
     };
   } catch (error) {
@@ -107,6 +148,7 @@ export const getStudentStats = async (userId: string) => {
 
 /**
  * Obtener resultados de un estudiante en quizzes específicos
+ * Retorna solo el último intento de cada quiz
  */
 export const getStudentQuizResults = async (userId: string, quizIds: string[]) => {
   try {
@@ -115,7 +157,17 @@ export const getStudentQuizResults = async (userId: string, quizIds: string[]) =
       quizId: { $in: quizIds }
     }).sort({ submittedAt: -1 });
 
-    return results;
+    // Agrupar por quizId y retornar solo el último intento
+    const quizMap = new Map<string, typeof results[0]>();
+    
+    results.forEach(result => {
+      const existing = quizMap.get(result.quizId);
+      if (!existing || result.attempt > existing.attempt) {
+        quizMap.set(result.quizId, result);
+      }
+    });
+
+    return Array.from(quizMap.values());
   } catch (error) {
     console.error('❌ Error obteniendo resultados:', error);
     return [];

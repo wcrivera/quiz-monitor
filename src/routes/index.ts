@@ -6,6 +6,7 @@ import { Router } from 'express';
 import { validateLTILaunch } from '../middleware/ltiAuth';
 import { handleLaunch } from '../controllers/ltiController';
 import { getStats, getQuizStatus } from '../controllers/quizController';
+import { handleCanvasWebhook, verifyWebhook } from '../controllers/webhookController';
 
 const router = Router();
 
@@ -14,13 +15,12 @@ router.get('/health', (_req, res) => {
   res.json({ ok: true, message: 'Quiz Monitor Backend is running' });
 });
 
-// LTI Route con parámetro dinámico
-// Acepta: /lti/launch/193158
-//         /lti/launch/193158,193190
-//         /lti/launch/193158,193190,193161
-router.post('/lti/launch/:quizIds', validateLTILaunch, handleLaunch);
+// Webhook endpoints
+router.post('/webhooks/canvas', handleCanvasWebhook);
+router.get('/webhooks/canvas', verifyWebhook);
 
-// Ruta fallback sin parámetro (usa .env)
+// LTI Route con parámetro dinámico
+router.post('/lti/launch/:quizIds', validateLTILaunch, handleLaunch);
 router.post('/lti/launch', validateLTILaunch, handleLaunch);
 
 // API Routes

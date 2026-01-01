@@ -1,15 +1,11 @@
 // ============================================================================
-// CANVAS API SERVICE - POLLING DE QUIZZES
+// CANVAS API SERVICE - SIN POLLING (USA WEBHOOKS)
 // ============================================================================
 
 import axios, { AxiosInstance } from 'axios';
 import { QuizSubmission, CanvasQuiz } from '../types';
-import { processQuizSubmission } from './quizMonitorService';
 
 let canvasClient: AxiosInstance | null = null;
-let monitoredQuizzes: Array<{ courseId: string; quizId: string }> = [];
-const processedSubmissions = new Set<string>();
-let pollingInterval: NodeJS.Timeout | null = null;
 
 /**
  * Inicializar servicio de Canvas
@@ -19,7 +15,7 @@ export const initialize = (): void => {
   const canvasToken = process.env.CANVAS_ACCESS_TOKEN;
 
   if (!canvasApiUrl || !canvasToken) {
-    console.error('❌ Canvas API no configurado (falta CANVAS_API_URL o CANVAS_ACCESS_TOKEN)');
+    console.error('❌ Canvas API no configurado');
     return;
   }
 
@@ -31,23 +27,15 @@ export const initialize = (): void => {
     timeout: 10000
   });
 
-  const quizzesConfig = process.env.MONITORED_QUIZZES || '';
-  if (quizzesConfig) {
-    monitoredQuizzes = quizzesConfig.split(',').map(pair => {
-      const [courseId, quizId] = pair.trim().split(':');
-      return { courseId, quizId };
-    });
-    console.log(`📊 Monitoreando ${monitoredQuizzes.length} quiz(zes)`);
-  }
-
   console.log('✅ Canvas API: Configurado');
+  console.log('📨 Usando Canvas Webhooks (polling deshabilitado)');
 };
 
 /**
  * Verificar si el servicio está listo
  */
 export const isReady = (): boolean => {
-  return canvasClient !== null && monitoredQuizzes.length > 0;
+  return canvasClient !== null;
 };
 
 /**
@@ -124,102 +112,11 @@ export const getUserQuizSubmissions = async (
   return results;
 };
 
-/**
- * Procesar submissions de un quiz
- */
-const pollQuiz = async (courseId: string, quizId: string): Promise<void> => {
-  try {
-    const quiz = await getQuiz(courseId, quizId);
-    if (!quiz) {
-      console.error(`❌ No se pudo obtener info del quiz ${quizId}`);
-      return;
-    }
-
-    const submissions = await getQuizSubmissions(courseId, quizId);
-    console.log(`🔍 Polling quiz ${quizId}: ${submissions.length} submissions encontrados`);
-
-    const newCompletedSubmissions = submissions.filter(sub => {
-      const key = `${sub.quiz_id}-${sub.user_id}-${sub.attempt}`;
-      const isCompleted = sub.workflow_state === 'complete';
-      const isNew = !processedSubmissions.has(key);
-      
-      return isCompleted && isNew;
-    });
-
-    for (const submission of newCompletedSubmissions) {
-      const key = `${submission.quiz_id}-${submission.user_id}-${submission.attempt}`;
-      
-      try {
-        await processQuizSubmission(submission, quiz.title, courseId);
-        processedSubmissions.add(key);
-        console.log(`✅ Nueva submission procesada: Quiz ${quizId}, Usuario ${submission.user_id}, Intento ${submission.attempt}`);
-      } catch (error) {
-        console.error(`❌ Error procesando submission ${key}:`, error);
-      }
-    }
-  } catch (error) {
-    console.error(`❌ Error en polling del quiz ${quizId}:`, error);
-  }
-};
-
-/**
- * Ejecutar polling de todos los quizzes monitoreados
- */
-const runPolling = async (): Promise<void> => {
-  if (!isReady()) {
-    console.warn('⚠️ Canvas service no está listo para polling');
-    return;
-  }
-
-  for (const { courseId, quizId } of monitoredQuizzes) {
-    await pollQuiz(courseId, quizId);
-  }
-};
-
-/**
- * Iniciar polling automático
- */
+// Polling deshabilitado - ahora usamos webhooks
 export const startPolling = (): void => {
-  if (!canvasClient) {
-    initialize();
-  }
-
-  if (!isReady()) {
-    console.error('❌ No se puede iniciar polling: Canvas service no está configurado correctamente');
-    return;
-  }
-
-  const intervalSeconds = parseInt(process.env.POLL_INTERVAL_SECONDS || '30', 10);
-  const intervalMs = intervalSeconds * 1000;
-
-  console.log(`⏱️  Polling activo cada ${intervalSeconds} segundos`);
-
-  runPolling();
-
-  if (pollingInterval) {
-    clearInterval(pollingInterval);
-  }
-
-  pollingInterval = setInterval(() => {
-    runPolling();
-  }, intervalMs);
+  console.log('⚠️ Polling deshabilitado - usando Canvas Webhooks');
 };
 
-/**
- * Detener polling
- */
 export const stopPolling = (): void => {
-  if (pollingInterval) {
-    clearInterval(pollingInterval);
-    pollingInterval = null;
-    console.log('⏸️  Polling detenido');
-  }
-};
-
-/**
- * Limpiar cache de submissions procesadas
- */
-export const clearProcessedCache = (): void => {
-  processedSubmissions.clear();
-  console.log('🧹 Cache de submissions limpiado');
+  console.log('⚠️ Polling ya está deshabilitado');
 };

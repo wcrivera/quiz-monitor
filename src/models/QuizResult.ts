@@ -1,5 +1,5 @@
 // ============================================================================
-// QUIZ RESULT MODEL
+// QUIZ RESULT MODEL - MÚLTIPLES INTENTOS
 // ============================================================================
 
 import mongoose, { Schema, Document } from 'mongoose';
@@ -30,7 +30,7 @@ const QuizResultSchema = new Schema<IQuizResult>({
   submittedAt: { type: Date, required: true },
   attempt: { type: Number, required: true },
   workflowState: { type: String, required: true },
-  submissionId: { type: String, required: true, unique: true },
+  submissionId: { type: String, required: true }, // ← YA NO ES UNIQUE
   courseId: { type: String, required: true },
   studentId: { type: String, required: true },
   studentName: { type: String, required: true }
@@ -38,7 +38,7 @@ const QuizResultSchema = new Schema<IQuizResult>({
   timestamps: true
 });
 
-// Índice compuesto para búsquedas rápidas
-QuizResultSchema.index({ userId: 1, quizId: 1, attempt: 1 });
+// Índice compuesto único: un resultado por userId + quizId + attempt
+QuizResultSchema.index({ userId: 1, quizId: 1, attempt: 1 }, { unique: true });
 
 export default mongoose.model<IQuizResult>('QuizResult', QuizResultSchema);
