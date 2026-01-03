@@ -5,7 +5,6 @@
 import { Router } from 'express';
 import { validateLTILaunch } from '../middleware/ltiAuth';
 import { handleLaunch } from '../controllers/ltiController';
-import { getStats, getQuizStatus } from '../controllers/quizController';
 import { handleCanvasWebhook, verifyWebhook } from '../controllers/webhookController';
 import { obtenerModuloCurso } from '../controllers/modulo';
 import { obtenerCurso } from '../controllers/curso';

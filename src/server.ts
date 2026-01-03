@@ -14,8 +14,6 @@ import { errorHandler } from './middleware/errorHandler';
 import { initializeSocket } from './services/socketService';
 import * as canvasService from './services/canvasService';
 
-import moduloRoutes from "./routes/modulo";
-
 dotenv.config();
 
 const app: Application = express();
