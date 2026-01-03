@@ -5,7 +5,9 @@ import Modulo from "../models/modulo";
 // import Matricula from "../models/matricula";
 
 export const obtenerModuloCurso: RequestHandler = async (req, res) => {
-  const { cid, number } = req.params;
+  const { cid, number, course_id } = req.params;
+
+  console.log("curso id", course_id)
 
   const canvasApiUrl = process.env.CANVAS_API_URL;
   const canvasToken = process.env.CANVAS_ACCESS_TOKEN;
