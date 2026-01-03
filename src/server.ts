@@ -14,6 +14,8 @@ import { errorHandler } from './middleware/errorHandler';
 import { initializeSocket } from './services/socketService';
 import * as canvasService from './services/canvasService';
 
+import moduloRoutes from "./routes/modulo";
+
 dotenv.config();
 
 const app: Application = express();
@@ -47,6 +49,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(routes);
+// app.use("/api/modulo", moduloRoutes);
 
 const publicPath = path.join(__dirname, '../public');
 app.use(express.static(publicPath));
