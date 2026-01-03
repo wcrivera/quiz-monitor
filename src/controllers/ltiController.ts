@@ -10,16 +10,16 @@ export const handleLaunch = async (req: Request, res: Response): Promise<void> =
     console.log('═══════════════════════════════════════════════════════════');
     console.log('🔍 LTI LAUNCH - DATOS COMPLETOS DE CANVAS');
     console.log('═══════════════════════════════════════════════════════════');
-    
+
     // 🔍 MOSTRAR TODO EL BODY
     console.log('📦 req.body COMPLETO:');
     console.log(JSON.stringify(req.body, null, 2));
-    
+
     console.log('');
     console.log('───────────────────────────────────────────────────────────');
     console.log('📋 CAMPOS IMPORTANTES:');
     console.log('───────────────────────────────────────────────────────────');
-    
+
     const {
       custom_canvas_user_id,
       user_id,
@@ -49,7 +49,7 @@ export const handleLaunch = async (req: Request, res: Response): Promise<void> =
     console.log('📝 Resource description:', resource_link_description);
     console.log('🔙 Return URL:', launch_presentation_return_url);
     console.log('🏫 Institution:', tool_consumer_instance_name);
-    
+
     console.log('');
     console.log('───────────────────────────────────────────────────────────');
     console.log('⚙️ EXTRACCIÓN DE IDs:');
@@ -58,7 +58,7 @@ export const handleLaunch = async (req: Request, res: Response): Promise<void> =
     // Extraer user_id
     const canvasUserId = custom_canvas_user_id || user_id;
     console.log('✅ User ID final:', canvasUserId);
-    
+
     if (!canvasUserId) {
       console.error('❌ ERROR: No se pudo obtener user_id');
       console.log('═══════════════════════════════════════════════════════════');
@@ -73,9 +73,9 @@ export const handleLaunch = async (req: Request, res: Response): Promise<void> =
     // Extraer quiz_ids de la ruta
     const quizIdsParam = req.params.quizIds || req.params[0];
     console.log('📊 Quiz IDs (de ruta):', quizIdsParam);
-    
+
     let quizIds: string[] = [];
-    
+
     if (quizIdsParam) {
       quizIds = quizIdsParam.split(',').map(id => id.trim()).filter(Boolean);
       console.log('✅ Quiz IDs parseados:', quizIds);
@@ -92,7 +92,7 @@ export const handleLaunch = async (req: Request, res: Response): Promise<void> =
     console.log('───────────────────────────────────────────────────────────');
     console.log('🔄 REDIRECCIÓN:');
     console.log('───────────────────────────────────────────────────────────');
-    
+
     const frontendUrl = `/monitor?user_id=${canvasUserId}&course_id=${courseId}&quiz_ids=${quizIds.join(',')}`;
     console.log('🎯 URL destino:', frontendUrl);
     console.log('═══════════════════════════════════════════════════════════');

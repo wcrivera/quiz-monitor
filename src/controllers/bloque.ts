@@ -10,8 +10,6 @@ export const obtenerBloquesModulo: RequestHandler = async (req, res) => {
   const canvasApiUrl = process.env.CANVAS_API_URL;
   const canvasToken = process.env.CANVAS_ACCESS_TOKEN;
 
-  console.log(cid, mid)
-
   try {
     const resBloques = await fetch(`${canvasApiUrl}/courses/${cid}/modules/${mid}/items?per_page=100`, {
       headers: { "Authorization": `Bearer ${canvasToken}` }

@@ -6,13 +6,6 @@ import Modulo from "../models/modulo";
 
 export const obtenerModuloCurso: RequestHandler = async (req, res) => {
   const { cid, number } = req.params;
-  const { custom_canvas_user_id,
-    user_id,
-    custom_canvas_course_id } = req.body;
-
-  console.log("curso id", custom_canvas_user_id,
-    user_id,
-    custom_canvas_course_id)
 
   const canvasApiUrl = process.env.CANVAS_API_URL;
   const canvasToken = process.env.CANVAS_ACCESS_TOKEN;
