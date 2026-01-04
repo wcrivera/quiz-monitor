@@ -9,6 +9,8 @@ import { handleCanvasWebhook, verifyWebhook } from '../controllers/webhookContro
 import { obtenerModuloCurso } from '../controllers/modulo';
 import { obtenerCurso } from '../controllers/curso';
 import { obtenerBloquesModulo } from '../controllers/bloque';
+import { enviarRespuestaQuiz } from '../controllers/quiz';
+import { obtenerQuestionsSection } from '../controllers/questions';
 
 const router = Router();
 
@@ -25,6 +27,7 @@ router.get('/webhooks/canvas', verifyWebhook);
 router.post('/lti/launch/:quizIds', validateLTILaunch, handleLaunch);
 router.post('/lti/launch', validateLTILaunch, handleLaunch);
 
+router.post('/api/quiz/crear/:quiz_id', enviarRespuestaQuiz)
 // API Routes
 // router.get('/api/stats/:userId', getStats);
 // router.get('/api/quiz-status', getQuizStatus);
@@ -35,5 +38,9 @@ router.get('/api/curso/obtener/:cid', obtenerCurso);
 router.get('/api/modulo/obtener/:cid/:number', obtenerModuloCurso);
 // Obtener bloques de un módulo
 router.get('/api/bloque/obtener/:cid/:mid', obtenerBloquesModulo);
+// Obtener quizzes de un módulo
+
+// Obtener questions de un quiz
+router.get('/api/question/obtener/:cid/:sid', obtenerQuestionsSection);
 
 export default router;

@@ -4,24 +4,23 @@ import Bloque from "../models/bloque";
 // import Usuario from "../models/usuario";
 // import Matricula from "../models/matricula";
 
-export const obtenerBloquesModulo: RequestHandler = async (req, res) => {
-  const { cid, mid } = req.params;
+export const obtenerQuestionsSection: RequestHandler = async (req, res) => {
+  const { cid, sid } = req.params;
 
   const canvasApiUrl = process.env.CANVAS_API_URL;
   const canvasToken = process.env.CANVAS_ACCESS_TOKEN;
 
   try {
-    const resBloques = await fetch(`${canvasApiUrl}/courses/${cid}/modules/${mid}/items?per_page=1000`, {
+    const resQuestions = await fetch(`${canvasApiUrl}/courses/${cid}/quizzes/${sid}/questions?per_page=1000`, {
       headers: { "Authorization": `Bearer ${canvasToken}` }
     });
 
-    const bloques = await resBloques.json() as any[];  // ← Parsear JSON
-
-    const bloques_publicados = bloques.filter((m: any) => m.published === true);
+    const questions = await resQuestions.json() as any[];  // ← Parsear JSON
+    // const questions_publicadas = questions.filter((m: any) => m.published === true && String(m.module_id) === String(sid));
 
     return res.json({
       ok: true,
-      bloques: bloques_publicados,
+      questions: questions,
     });
   } catch (error) {
     console.log(error);
