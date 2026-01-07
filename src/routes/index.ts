@@ -9,7 +9,7 @@ import { handleCanvasWebhook, verifyWebhook } from '../controllers/webhookContro
 import { obtenerModuloCurso } from '../controllers/modulo';
 import { obtenerCurso } from '../controllers/curso';
 import { obtenerBloquesModulo } from '../controllers/bloque';
-import { enviarRespuestaQuiz } from '../controllers/quiz';
+import { enviarRespuestaQuiz, obtenerScoreQuiz, obtenerScoreQuizzes } from '../controllers/quiz';
 import { obtenerQuestionsSection } from '../controllers/questions';
 
 const router = Router();
@@ -26,6 +26,9 @@ router.get('/webhooks/canvas', verifyWebhook);
 // LTI Route con parámetro dinámico
 router.post('/lti/launch/:quizIds', validateLTILaunch, handleLaunch);
 router.post('/lti/launch', validateLTILaunch, handleLaunch);
+
+router.get('/api/quiz/obtener_scores/:curso_id/:user_id', obtenerScoreQuizzes)
+router.get('/api/quiz/obtener/:curso_id/:quiz_id/:user_id', obtenerScoreQuiz)
 
 router.post('/api/quiz/crear/:quiz_id', enviarRespuestaQuiz)
 // API Routes
