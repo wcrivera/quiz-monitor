@@ -4,6 +4,37 @@ import Modulo from "../models/modulo";
 // import Usuario from "../models/usuario";
 // import Matricula from "../models/matricula";
 
+
+export const obtenerModulosCurso: RequestHandler = async (req, res) => {
+  const { course_id } = req.params;
+
+  const canvasApiUrl = process.env.CANVAS_API_URL;
+  const canvasToken = process.env.CANVAS_ACCESS_TOKEN;
+
+  try {
+
+    const resModulos = await fetch(`${canvasApiUrl}/courses/${course_id}/modules?per_page=1000`, {
+      headers: { "Authorization": `Bearer ${canvasToken}` }
+    });
+
+    const modulos = await resModulos.json() as any[]
+
+    console.log("modulos", modulos.length)
+
+    return res.json({
+      ok: true,
+      msg: "Módulos obtenidos",
+      modulos: modulos,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      ok: false,
+      msg: "Estamos teniendo problemas, vuelva a intentarlo más tarde",
+    });
+  }
+};
+
 export const obtenerModuloCurso: RequestHandler = async (req, res) => {
   const { cid, number } = req.params;
 

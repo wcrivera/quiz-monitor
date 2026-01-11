@@ -1,24 +1,24 @@
 import { RequestHandler } from "express";
 
-export const obtenerCurso: RequestHandler = async (req, res) => {
-  const { course_id } = req.params;
+export const obtenerUsuario: RequestHandler = async (req, res) => {
+  const { course_id, user_id } = req.params;
 
   const canvasApiUrl = process.env.CANVAS_API_URL;
   const canvasToken = process.env.CANVAS_ACCESS_TOKEN;
 
+  console.log(course_id, user_id)
+
   try {
 
-    const response = await fetch(`${canvasApiUrl}/courses/${course_id}`, {
+    const response = await fetch(`${canvasApiUrl}/courses/${course_id}/users/${user_id}`, {
       headers: { "Authorization": `Bearer ${canvasToken}` }
     });
 
-    const curso = await response.json() as any[]
+    const usuario = await response.json() as any[]
     return res.json({
       ok: true,
-      msg: "Curso obtenido",
-      curso: curso,
-      // bloques: bloques,
-      // module: module
+      msg: "Usuario obtenido",
+      usuario: usuario
     });
   } catch (error) {
     console.log(error);

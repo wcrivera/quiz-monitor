@@ -1,6 +1,6 @@
 import { RequestHandler } from "express";
 
-import Bloque from "../models/bloque";
+// import Bloque from "../models/bloque";
 // import Usuario from "../models/usuario";
 // import Matricula from "../models/matricula";
 

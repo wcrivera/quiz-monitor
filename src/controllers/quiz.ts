@@ -28,8 +28,6 @@ export const obtenerScoreQuizzes: RequestHandler = async (req, res) => {
   const API_TOKEN = process.env.CANVAS_ACCESS_TOKEN;
 
   try {
-
-
     const response_quiz = await fetch(
       `${CANVAS_URL}/courses/${curso_id}/quizzes`,
       {
@@ -53,7 +51,7 @@ export const obtenerScoreQuizzes: RequestHandler = async (req, res) => {
 
       const submissionsData = await response_submissions.json() as any;
 
-      console.log(submissionsData)
+      // console.log(submissionsData)
 
       if (submissionsData.errors) continue;
 
@@ -61,7 +59,7 @@ export const obtenerScoreQuizzes: RequestHandler = async (req, res) => {
       submissions.push(submissionsData)
     }
 
-    console.log("submissions", submissions)
+    // console.log("submissions", submissions)
 
     return res.json({
       ok: true,
@@ -154,7 +152,7 @@ export const enviarRespuestaQuiz: RequestHandler = async (req, res) => {
     );
 
     const assignment = await response_assignment.json() as any;
-    console.log("assignment", assignment)
+    // console.log("assignment", assignment)
 
     // ⭐ ESTE ES EL FORMATO CORRECTO ⭐
     const data = {
