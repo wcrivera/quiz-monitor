@@ -55,32 +55,3 @@ export const obtenerPaginasCurso: RequestHandler = async (req, res) => {
     });
   }
 }
-
-// export const obtenerpaginasModulo: RequestHandler = async (req, res) => {
-//   const { cid, mid } = req.params;
-
-//   const canvasApiUrl = process.env.CANVAS_API_URL;
-//   const canvasToken = process.env.CANVAS_ACCESS_TOKEN;
-
-//   try {
-//     const respaginas = await fetch(`${canvasApiUrl}/courses/${cid}/modules/${mid}/paginas?per_page=1000`, {
-//       headers: { "Authorization": `Bearer ${canvasToken}` }
-//     });
-
-//     const paginas = await respaginas.json() as any[];  // ← Parsear JSON
-
-//     const paginas_publicados = paginas.filter((m: any) => m.published === true);
-
-//     return res.json({
-//       ok: true,
-//       paginas: paginas_publicados,
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     const date = new Date();
-//     return res.status(500).json({
-//       ok: false,
-//       msg: "Estamos teniendo problemas, vuelva a intentarlo más tarde",
-//     });
-//   }
-// };

@@ -5,8 +5,6 @@ import { RequestHandler } from "express";
 export const obtenerAyudantiasModulo: RequestHandler = async (req, res) => {
   const { cid, mid } = req.params;
 
-  console.log(cid, mid)
-
   const canvasApiUrl = process.env.CANVAS_API_URL;
   const canvasToken = process.env.CANVAS_ACCESS_TOKEN;
 

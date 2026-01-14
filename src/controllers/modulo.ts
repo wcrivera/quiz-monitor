@@ -19,8 +19,6 @@ export const obtenerModulosCurso: RequestHandler = async (req, res) => {
 
     const modulos = await resModulos.json() as any[]
 
-    console.log("modulos", modulos.length)
-
     return res.json({
       ok: true,
       msg: "Módulos obtenidos",
