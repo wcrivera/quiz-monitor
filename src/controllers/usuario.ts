@@ -1,20 +1,18 @@
 import { RequestHandler } from "express";
 
 export const obtenerUsuario: RequestHandler = async (req, res) => {
-  const { course_id, user_id } = req.params;
+  const { curso_id, user_id } = req.params;
 
   const canvasApiUrl = process.env.CANVAS_API_URL;
   const canvasToken = process.env.CANVAS_ACCESS_TOKEN;
 
-  console.log(course_id, user_id)
-
   try {
 
-    const response = await fetch(`${canvasApiUrl}/courses/${course_id}/users/${user_id}`, {
+    const response = await fetch(`${canvasApiUrl}/courses/${curso_id}/users/${user_id}`, {
       headers: { "Authorization": `Bearer ${canvasToken}` }
     });
 
-    const usuario = await response.json() as any[]
+    const usuario = await response.json() as any
     return res.json({
       ok: true,
       msg: "Usuario obtenido",

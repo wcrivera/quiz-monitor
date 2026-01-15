@@ -1,24 +1,19 @@
 import { RequestHandler } from "express";
+import Curso from "../models/curso";
 
 export const obtenerCurso: RequestHandler = async (req, res) => {
-  const { course_id } = req.params;
 
-  const canvasApiUrl = process.env.CANVAS_API_URL;
-  const canvasToken = process.env.CANVAS_ACCESS_TOKEN;
+  const { curso_id } = req.params;
 
   try {
-
-    const response = await fetch(`${canvasApiUrl}/courses/${course_id}`, {
-      headers: { "Authorization": `Bearer ${canvasToken}` }
+    const curso = await Curso.findOne({
+      "canvas.curso_id": Number(curso_id)
     });
-
-    const curso = await response.json() as any[]
+    
     return res.json({
       ok: true,
       msg: "Curso obtenido",
       curso: curso,
-      // bloques: bloques,
-      // module: module
     });
   } catch (error) {
     console.log(error);
@@ -27,4 +22,30 @@ export const obtenerCurso: RequestHandler = async (req, res) => {
       msg: "Estamos teniendo problemas, vuelva a intentarlo más tarde",
     });
   }
+  // const { course_id } = req.params;
+
+  // const canvasApiUrl = process.env.CANVAS_API_URL;
+  // const canvasToken = process.env.CANVAS_ACCESS_TOKEN;
+
+  // try {
+
+  //   const response = await fetch(`${canvasApiUrl}/courses/${course_id}`, {
+  //     headers: { "Authorization": `Bearer ${canvasToken}` }
+  //   });
+
+  //   const curso = await response.json() as any[]
+  //   return res.json({
+  //     ok: true,
+  //     msg: "Curso obtenido",
+  //     curso: curso,
+  //     // bloques: bloques,
+  //     // module: module
+  //   });
+  // } catch (error) {
+  //   console.log(error);
+  //   return res.status(500).json({
+  //     ok: false,
+  //     msg: "Estamos teniendo problemas, vuelva a intentarlo más tarde",
+  //   });
+  // }
 };
