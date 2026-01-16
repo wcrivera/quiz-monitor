@@ -83,4 +83,5 @@ router.get('/api/tema/obtener/:capitulo_id', obtenerTemasCapitulo);
 // router.get('/api/pagina/obtener/:course_id', obtenerPaginasCurso);
 // // AYUDANTIA ROUTES
 // router.get('/api/ayudantia/obtener/:course_id/:mid', obtenerAyudantiasModulo);
+
 export default router;

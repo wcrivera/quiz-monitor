@@ -9,7 +9,15 @@ export const obtenerCurso: RequestHandler = async (req, res) => {
     const curso = await Curso.findOne({
       "canvas.curso_id": Number(curso_id)
     });
-    
+
+    // ✅ VALIDAR si el curso existe
+    if (!curso) {
+      return res.status(404).json({
+        ok: false,
+        msg: `Curso con ID ${curso_id} no encontrado en la base de datos`,
+      });
+    }
+
     return res.json({
       ok: true,
       msg: "Curso obtenido",
