@@ -8,6 +8,7 @@ export const obtenerAyudantiasModulo: RequestHandler = async (req, res) => {
   const canvasApiUrl = process.env.CANVAS_API_URL;
   const canvasToken = process.env.CANVAS_ACCESS_TOKEN;
 
+  console.log('first')
   try {
     const resAyudantias = await fetch(`${canvasApiUrl}/courses/${cid}/modules/${mid}/items?per_page=1000`, {
       headers: { "Authorization": `Bearer ${canvasToken}` }
