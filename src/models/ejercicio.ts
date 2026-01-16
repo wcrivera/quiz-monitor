@@ -1,6 +1,6 @@
 import { Schema, Types, model } from "mongoose";
 
-interface Ayudantia {
+interface Ejercicio {
   id: Types.ObjectId;
   curso_id: Schema.Types.ObjectId;
   capitulo_id: Schema.Types.ObjectId;
@@ -11,7 +11,7 @@ interface Ayudantia {
   ejercicio: { enunciado: string; alternativas: [{ letra: string; texto: string; correcta: boolean }] };
 }
 
-const AyudantiaSchema = new Schema<Ayudantia>({
+const EjercicioSchema = new Schema<Ejercicio>({
   curso_id: {
     type: Schema.Types.ObjectId,
     ref: "Curso",
@@ -67,10 +67,10 @@ const AyudantiaSchema = new Schema<Ayudantia>({
   },
 });
 
-AyudantiaSchema.method("toJSON", function () {
+EjercicioSchema.method("toJSON", function () {
   const { _id, ...object } = this.toObject();
   object.id = _id;
   return object;
 });
 
-export default model("Ayudantia", AyudantiaSchema);
+export default model("Ejercicio", EjercicioSchema);

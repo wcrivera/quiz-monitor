@@ -1,22 +1,22 @@
 import { RequestHandler } from "express";
-import Ayudantia from "../models/ayudantia";
+import Ejercicio from "../models/ejercicio";
 
-// import Ayudantia from "../models/ayudantia";
+// import Ejercicio from "../models/ejercicio";
 
-export const obtenerAyudantiasCapitulo: RequestHandler = async (req, res) => {
+export const obtenerEjerciciosCapitulo: RequestHandler = async (req, res) => {
   const { capitulo_id } = req.params;
 
   try {
-    const ayudantias = await Ayudantia.find({ capitulo_id: capitulo_id }).sort({ numero: 1 });
+    const ejercicios = await Ejercicio.find({ capitulo_id: capitulo_id }).sort({ numero: 1 });
 
-    if (ayudantias.length === 0) {
-      console.log(`⚠️ No se encontraron ayudantias para capitulo_id: ${capitulo_id}`);
+    if (ejercicios.length === 0) {
+      console.log(`⚠️ No se encontraron ejercicios para capitulo_id: ${capitulo_id}`);
     }
 
     return res.json({
       ok: true,
-      msg: "Ayudantias obtenidas",
-      ayudantias: ayudantias,
+      msg: "Ejercicios obtenidas",
+      ejercicios: ejercicios,
     });
   } catch (error) {
     console.log(error);
@@ -51,7 +51,7 @@ export const obtenerAyudantiasCapitulo: RequestHandler = async (req, res) => {
 //       });
 //     }
 
-//     const nuevoEjercicio = new Ayudantia(req.body);
+//     const nuevoEjercicio = new Ejercicio(req.body);
 //     const ejercicioCreado = await nuevoEjercicio.save();
 
 //     return res.json({
@@ -81,11 +81,11 @@ export const obtenerAyudantiasCapitulo: RequestHandler = async (req, res) => {
 //     }
 
 //     const { id } = req.params;
-//     const ayudantia = await Ayudantia.findById(id);
+//     const ejercicio = await Ejercicio.findById(id);
 
 //     const matricula = await Matricula.findOne({
 //       uid: uid,
-//       cid: ayudantia?.cid,
+//       cid: ejercicio?.cid,
 //     });
 
 //     if (usuario.admin === false && matricula?.rol !== "Administrador") {
@@ -95,27 +95,27 @@ export const obtenerAyudantiasCapitulo: RequestHandler = async (req, res) => {
 //       });
 //     }
 
-//     const ayudantiaEliminada = await Ayudantia.findByIdAndDelete(id);
+//     const ejercicioEliminada = await Ejercicio.findByIdAndDelete(id);
 
-//     if (ayudantiaEliminada) {
-//       await Ayudantia.updateMany(
+//     if (ejercicioEliminada) {
+//       await Ejercicio.updateMany(
 //         {
-//           cid: ayudantiaEliminada.cid,
-//           mid: ayudantiaEliminada.mid,
-//           numero: { $gt: ayudantiaEliminada.numero },
+//           cid: ejercicioEliminada.cid,
+//           mid: ejercicioEliminada.mid,
+//           numero: { $gt: ejercicioEliminada.numero },
 //         },
 //         { $inc: { numero: -1 } }
 //       );
 
-//       const ayudantiasActualizada = await Ayudantia.find({
-//         cid: ayudantiaEliminada.cid,
-//         mid: ayudantiaEliminada.mid,
+//       const ejerciciosActualizada = await Ejercicio.find({
+//         cid: ejercicioEliminada.cid,
+//         mid: ejercicioEliminada.mid,
 //       }).sort({ numero: 1 });
 
 //       return res.json({
 //         ok: true,
 //         msg: "Ejercicio eliminado",
-//         ayudantiasActualizada,
+//         ejerciciosActualizada,
 //       });
 //     } else {
 //       return res.json({
@@ -157,61 +157,61 @@ export const obtenerAyudantiasCapitulo: RequestHandler = async (req, res) => {
 
 //     const { id, mid, numero } = req.body;
 
-//     const mismaAyudantiaEncontrada = await Ayudantia.findOne({ _id: id });
+//     const mismaEjercicioEncontrada = await Ejercicio.findOne({ _id: id });
 
-//     if (!mismaAyudantiaEncontrada) {
+//     if (!mismaEjercicioEncontrada) {
 //       return res.json({
 //         ok: false,
 //         msg: "Ejercicio no existe",
 //       });
 //     }
 
-//     if (mismaAyudantiaEncontrada.numero === numero) {
+//     if (mismaEjercicioEncontrada.numero === numero) {
 //       console.log("mismo ejercicio");
-//       await Ayudantia.findByIdAndUpdate(id, req.body, { new: true });
-//       const ayudantiasActualizada = await Ayudantia.find({
+//       await Ejercicio.findByIdAndUpdate(id, req.body, { new: true });
+//       const ejerciciosActualizada = await Ejercicio.find({
 //         cid: cid,
 //         mid: mid,
 //       }).sort({ numero: 1 });
 //       return res.json({
 //         ok: true,
 //         msg: "Módulo editado",
-//         ayudantiasActualizada,
+//         ejerciciosActualizada,
 //       });
 //     }
 
-//     const diferenteAyudantiaEncontrada = await Ayudantia.findOne({
+//     const diferenteEjercicioEncontrada = await Ejercicio.findOne({
 //       cid,
 //       mid,
 //       numero,
 //     });
 
-//     if (!diferenteAyudantiaEncontrada) {
-//       await Ayudantia.findByIdAndUpdate(id, req.body, { new: true });
-//       const ayudantiasActualizada = await Ayudantia.find({
+//     if (!diferenteEjercicioEncontrada) {
+//       await Ejercicio.findByIdAndUpdate(id, req.body, { new: true });
+//       const ejerciciosActualizada = await Ejercicio.find({
 //         cid: cid,
 //         mid: mid,
 //       }).sort({ numero: 1 });
 //       return res.json({
 //         ok: true,
 //         msg: "Módulo editado",
-//         ayudantiasActualizada,
+//         ejerciciosActualizada,
 //       });
 //     } else {
-//       await Ayudantia.findByIdAndUpdate(id, req.body, { new: true });
-//       await Ayudantia.findByIdAndUpdate(
-//         diferenteAyudantiaEncontrada._id,
-//         { numero: mismaAyudantiaEncontrada.numero },
+//       await Ejercicio.findByIdAndUpdate(id, req.body, { new: true });
+//       await Ejercicio.findByIdAndUpdate(
+//         diferenteEjercicioEncontrada._id,
+//         { numero: mismaEjercicioEncontrada.numero },
 //         { new: true }
 //       );
-//       const ayudantiasActualizada = await Ayudantia.find({
+//       const ejerciciosActualizada = await Ejercicio.find({
 //         cid: cid,
 //         mid: mid,
 //       }).sort({ numero: 1 });
 //       return res.json({
 //         ok: true,
 //         msg: "Módulo editado",
-//         ayudantiasActualizada,
+//         ejerciciosActualizada,
 //       });
 //     }
 //   } catch (error) {
