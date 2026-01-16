@@ -12,7 +12,7 @@ import { getUserQuizSubmissions } from '../services/canvasService';
 export const getStats = async (req: Request, res: Response): Promise<void> => {
   try {
     const { userId } = req.params;
-    
+
     console.log(`📊 Stats Request: User ${userId}`);
 
     const stats = await getStudentStats(userId);
@@ -34,7 +34,7 @@ export const getQuizStatus = async (req: Request, res: Response): Promise<void> 
   try {
     const userId = req.query.user_id as string;
     const quizIdsParam = req.query.quiz_ids as string;
-    
+
     console.log('📊 Quiz Status Request:');
     console.log('👤 User:', userId);
     console.log('📋 Quizzes:', quizIdsParam);
@@ -52,13 +52,27 @@ export const getQuizStatus = async (req: Request, res: Response): Promise<void> 
     // Extraer courseId del MONITORED_QUIZZES o usar default
     const monitoredQuizzes = process.env.MONITORED_QUIZZES || '';
     const firstPair = monitoredQuizzes.split(',')[0];
-    const courseId = firstPair ? firstPair.trim().split(':')[0] : '90302';
 
-    console.log('📚 Course ID:', courseId);
+    // ✅ Extraer courseId sin fallback hardcodeado
+    let courseId: string | null = null;
+    if (firstPair) {
+      const parts = firstPair.trim().split(':');
+      courseId = parts[0] || null;
+    }
+
+    // ✅ Validar que se obtuvo courseId
+    if (!courseId) {
+      console.error('❌ ERROR: No se pudo obtener course_id de MONITORED_QUIZZES');
+      res.status(400).json({
+        ok: false,
+        error: 'No course_id configured in MONITORED_QUIZZES'
+      });
+      return;
+    }
 
     // Obtener resultados de MongoDB
     const dbResults = await getStudentQuizResults(userId, quizIds);
-    
+
     // Obtener datos actualizados de Canvas API
     const canvasResults = await getUserQuizSubmissions(courseId, userId, quizIds);
 

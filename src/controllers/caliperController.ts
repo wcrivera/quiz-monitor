@@ -13,13 +13,13 @@ export const handleCaliperEvent = async (req: Request, res: Response): Promise<v
   try {
     console.log('📨 Evento Caliper recibido');
     console.log('📦 Body completo:', JSON.stringify(req.body, null, 2));
-    
+
     const events = Array.isArray(req.body) ? req.body : [req.body];
-    
+
     for (const event of events) {
       console.log('📦 Tipo de evento:', event.type);
       console.log('📦 Acción:', event.action);
-      
+
       // Procesar eventos de Assessment (Quiz)
       if (event.type === 'AssessmentEvent' || event.type === 'GradeEvent') {
         await processCaliperAssessmentEvent(event);
@@ -41,7 +41,7 @@ const processCaliperAssessmentEvent = async (event: any): Promise<void> => {
     const actor = event.actor;
     const object = event.object;
     const generated = event.generated;
-    
+
     console.log('🎯 Actor:', actor?.id);
     console.log('📝 Object:', object?.id);
     console.log('📊 Generated:', generated);
@@ -54,20 +54,37 @@ const processCaliperAssessmentEvent = async (event: any): Promise<void> => {
 
     const actorId = extractCanvasId(actor?.id);
     const objectId = extractCanvasId(object?.id);
-    
+
     if (!actorId || !objectId) {
       console.log('⚠️ No se pudieron extraer IDs del evento');
       return;
     }
 
-    const courseId = extractCourseId(object?.id) || 
-                     process.env.MONITORED_QUIZZES?.split(',')[0]?.split(':')[0] || 
-                     '90302';
-    
+    // ✅ Intentar extraer courseId del evento Caliper
+    let courseId = extractCourseId(object?.id);
+
+    // ✅ Si no está en el evento, intentar desde MONITORED_QUIZZES
+    if (!courseId) {
+      const monitoredQuizzes = process.env.MONITORED_QUIZZES;
+      if (monitoredQuizzes) {
+        const firstPair = monitoredQuizzes.split(',')[0];
+        if (firstPair) {
+          const parts = firstPair.trim().split(':');
+          courseId = parts[0] || null;
+        }
+      }
+    }
+
+    // ✅ Validar que se obtuvo courseId
+    if (!courseId) {
+      console.error('❌ No se pudo obtener course_id del evento Caliper ni de MONITORED_QUIZZES');
+      return;
+    }
+
     console.log('📚 Course ID extraído:', courseId);
-    
+
     const quiz = await getQuiz(courseId, objectId);
-    
+
     if (!quiz) {
       console.log('⚠️ No se pudo obtener información del quiz');
       return;
@@ -89,9 +106,9 @@ const processCaliperAssessmentEvent = async (event: any): Promise<void> => {
     };
 
     await processQuizSubmission(submission, quiz.title, courseId);
-    
+
     console.log('✅ Evento Caliper procesado exitosamente');
-    
+
   } catch (error) {
     console.error('❌ Error procesando evento de assessment:', error);
   }
