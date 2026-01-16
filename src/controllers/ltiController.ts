@@ -67,8 +67,15 @@ export const handleLaunch = async (req: Request, res: Response): Promise<void> =
     }
 
     // Extraer course_id
-    const courseId = custom_canvas_course_id || context_id || '90302';
-    console.log('✅ Course ID final:', courseId);
+    const courseId = custom_canvas_course_id || context_id;
+
+    // ✅ Validar que se obtuvo el course_id
+    if (!courseId) {
+      console.error('❌ ERROR: No se pudo obtener course_id de Canvas');
+      console.log('═══════════════════════════════════════════════════════════');
+      res.status(400).send('Error: No course_id found in LTI launch');
+      return;
+    }
 
     // Extraer quiz_ids de la ruta
     const quizIdsParam = req.params.quizIds || req.params[0];
