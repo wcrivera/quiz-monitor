@@ -1,18 +1,15 @@
 // ============================================================================
-// SERVER - QUIZ MONITOR BACKEND CON POLLING INTELIGENTE
+// SERVER - LTI CANVAS CONTENT VIEWER
 // ============================================================================
 
-import express, { Application } from 'express';
+import express, { Application, Request, Response } from 'express';
 import { createServer } from 'http';
-import { Server as SocketIOServer } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import path from 'path';
 import routes from './routes';
 import { errorHandler } from './middleware/errorHandler';
-import { initializeSocket } from './services/socketService';
-import * as canvasService from './services/canvasService';
 
 dotenv.config();
 
@@ -21,17 +18,9 @@ const PORT = process.env.PORT || 3001;
 
 const httpServer = createServer(app);
 
-const io = new SocketIOServer(httpServer, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST'],
-    credentials: true
-  },
-  transports: ['websocket', 'polling']
-});
-
-initializeSocket(io);
-console.log('✅ Socket.io inicializado');
+// ============================================================================
+// MIDDLEWARE
+// ============================================================================
 
 app.use(cors({
   origin: '*',
@@ -46,49 +35,64 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ============================================================================
+// ROUTES
+// ============================================================================
+
 app.use(routes);
-// app.use("/api/modulo", moduloRoutes);
+
+// ============================================================================
+// STATIC FILES
+// ============================================================================
 
 const publicPath = path.join(__dirname, '../public');
 app.use(express.static(publicPath));
 console.log('📁 Sirviendo archivos estáticos desde:', publicPath);
 
-app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api') && 
-      !req.path.startsWith('/lti') && 
-      !req.path.startsWith('/caliper') &&
-      !req.path.startsWith('/health') &&
-      !req.path.startsWith('/config.xml')) {
+// Fallback para SPA
+app.get('*', (req: Request, res: Response) => {
+  if (!req.path.startsWith('/api') &&
+    !req.path.startsWith('/lti') &&
+    !req.path.startsWith('/health')) {
     const indexPath = path.join(publicPath, 'index.html');
     res.sendFile(indexPath);
   } else {
-    res.status(404).json({ error: 'Not found' });
+    res.status(404).json({ ok: false, error: 'Endpoint not found' });
   }
 });
 
+// ============================================================================
+// ERROR HANDLER
+// ============================================================================
+
 app.use(errorHandler);
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/quiz-monitor')
+// ============================================================================
+// MONGODB CONNECTION
+// ============================================================================
+
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/lti-content-viewer';
+
+mongoose
+  .connect(MONGODB_URI)
   .then(() => {
     console.log('✅ MongoDB: Conectado exitosamente');
-    console.log('📊 Base de datos:', mongoose.connection.db?.databaseName);
-    
-    canvasService.initialize();
-    
-    if (process.env.ENABLE_POLLING === 'true') {
-      canvasService.startPolling();
-    } else {
-      console.log('⏸️ Polling deshabilitado');
-    }
+    const dbName = mongoose.connection.db?.databaseName || 'unknown';
+    console.log('📊 Base de datos:', dbName);
   })
   .catch((error) => {
     console.error('❌ MongoDB: Error de conexión:', error);
+    process.exit(1);
   });
+
+// ============================================================================
+// START SERVER
+// ============================================================================
 
 httpServer.listen(PORT, () => {
   console.log('');
   console.log('═══════════════════════════════════════════════════════════');
-  console.log('🚀 QUIZ MONITOR BACKEND v2.0 - POLLING INTELIGENTE');
+  console.log('🚀 LTI CANVAS CONTENT VIEWER - BACKEND');
   console.log('═══════════════════════════════════════════════════════════');
   console.log(`📍 Servidor:     http://localhost:${PORT}`);
   console.log(`🔗 Health:       http://localhost:${PORT}/health`);
@@ -96,6 +100,10 @@ httpServer.listen(PORT, () => {
   console.log('═══════════════════════════════════════════════════════════');
   console.log('');
 });
+
+// ============================================================================
+// ERROR HANDLING
+// ============================================================================
 
 process.on('unhandledRejection', (reason) => {
   console.error('❌ Unhandled Rejection:', reason);

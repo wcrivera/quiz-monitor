@@ -1,107 +1,54 @@
 // ============================================================================
-// LTI CONTROLLER - CON LOGS COMPLETOS PARA DEBUG
+// LTI CONTROLLER - CONTENT VIEWER
 // ============================================================================
 
 import { Request, Response } from 'express';
 
+/**
+ * Manejar LTI Launch desde Canvas
+ */
 export const handleLaunch = async (req: Request, res: Response): Promise<void> => {
   try {
     console.log('');
     console.log('═══════════════════════════════════════════════════════════');
-    console.log('🔍 LTI LAUNCH - DATOS COMPLETOS DE CANVAS');
+    console.log('🔍 LTI LAUNCH - CONTENT VIEWER');
     console.log('═══════════════════════════════════════════════════════════');
-
-    // 🔍 MOSTRAR TODO EL BODY
-    console.log('📦 req.body COMPLETO:');
-    console.log(JSON.stringify(req.body, null, 2));
-
-    console.log('');
-    console.log('───────────────────────────────────────────────────────────');
-    console.log('📋 CAMPOS IMPORTANTES:');
-    console.log('───────────────────────────────────────────────────────────');
 
     const {
       custom_canvas_user_id,
       user_id,
       custom_canvas_course_id,
       context_id,
-      lis_person_name_full,
-      lis_person_name_given,
-      lis_person_name_family,
-      lis_person_contact_email_primary,
-      roles,
-      resource_link_title,
-      resource_link_description,
-      launch_presentation_return_url,
-      tool_consumer_instance_name
+      lis_person_name_full
     } = req.body;
 
-    console.log('👤 custom_canvas_user_id:', custom_canvas_user_id);
-    console.log('👤 user_id (fallback):', user_id);
-    console.log('📚 custom_canvas_course_id:', custom_canvas_course_id);
-    console.log('📚 context_id (fallback):', context_id);
-    console.log('👨 Nombre completo:', lis_person_name_full);
-    console.log('👨 Nombre:', lis_person_name_given);
-    console.log('👨 Apellido:', lis_person_name_family);
-    console.log('📧 Email:', lis_person_contact_email_primary);
-    console.log('👔 Roles:', roles);
-    console.log('📌 Resource title:', resource_link_title);
-    console.log('📝 Resource description:', resource_link_description);
-    console.log('🔙 Return URL:', launch_presentation_return_url);
-    console.log('🏫 Institution:', tool_consumer_instance_name);
-
-    console.log('');
-    console.log('───────────────────────────────────────────────────────────');
-    console.log('⚙️ EXTRACCIÓN DE IDs:');
-    console.log('───────────────────────────────────────────────────────────');
+    console.log('👤 User ID (custom):', custom_canvas_user_id);
+    console.log('👤 User ID (fallback):', user_id);
+    console.log('📚 Course ID (custom):', custom_canvas_course_id);
+    console.log('📚 Course ID (fallback):', context_id);
+    console.log('👨 Usuario:', lis_person_name_full);
 
     // Extraer user_id
     const canvasUserId = custom_canvas_user_id || user_id;
-    console.log('✅ User ID final:', canvasUserId);
-
     if (!canvasUserId) {
       console.error('❌ ERROR: No se pudo obtener user_id');
-      console.log('═══════════════════════════════════════════════════════════');
-      res.status(400).send('Error: No user_id found');
+      res.status(400).send('Error: No user_id found in LTI launch');
       return;
     }
+    console.log('✅ User ID final:', canvasUserId);
 
     // Extraer course_id
     const courseId = custom_canvas_course_id || context_id;
-
-    // ✅ Validar que se obtuvo el course_id
     if (!courseId) {
-      console.error('❌ ERROR: No se pudo obtener course_id de Canvas');
-      console.log('═══════════════════════════════════════════════════════════');
+      console.error('❌ ERROR: No se pudo obtener course_id');
       res.status(400).send('Error: No course_id found in LTI launch');
       return;
     }
+    console.log('✅ Course ID final:', courseId);
 
-    // Extraer quiz_ids de la ruta
-    const quizIdsParam = req.params.quizIds || req.params[0];
-    console.log('📊 Quiz IDs (de ruta):', quizIdsParam);
-
-    let quizIds: string[] = [];
-
-    if (quizIdsParam) {
-      quizIds = quizIdsParam.split(',').map(id => id.trim()).filter(Boolean);
-      console.log('✅ Quiz IDs parseados:', quizIds);
-    } else {
-      const monitoredQuizzes = process.env.MONITORED_QUIZZES || '';
-      quizIds = monitoredQuizzes.split(',').map(pair => {
-        const [, quizId] = pair.trim().split(':');
-        return quizId;
-      }).filter(Boolean);
-      console.log('⚠️ Quiz IDs desde .env:', quizIds);
-    }
-
-    console.log('');
-    console.log('───────────────────────────────────────────────────────────');
-    console.log('🔄 REDIRECCIÓN:');
-    console.log('───────────────────────────────────────────────────────────');
-
+    // Redirigir al frontend
     const frontendUrl = `/curso?user_id=${canvasUserId}&course_id=${courseId}`;
-    console.log('🎯 URL destino:', frontendUrl);
+    console.log('🎯 Redirigiendo a:', frontendUrl);
     console.log('═══════════════════════════════════════════════════════════');
     console.log('');
 
