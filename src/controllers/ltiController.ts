@@ -93,7 +93,7 @@ export const handleLaunch = async (req: Request, res: Response): Promise<void> =
     console.log('🔄 REDIRECCIÓN:');
     console.log('───────────────────────────────────────────────────────────');
 
-    const frontendUrl = `/curso?user_id=${canvasUserId}&course_id=${courseId}}`;
+    const frontendUrl = `/curso?user_id=${canvasUserId}&course_id=${courseId}`;
     console.log('🎯 URL destino:', frontendUrl);
     console.log('═══════════════════════════════════════════════════════════');
     console.log('');
