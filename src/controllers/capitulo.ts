@@ -7,6 +7,11 @@ export const obtenerCapitulosCurso: RequestHandler = async (req, res) => {
 
     try {
         const capitulos = await Capitulo.find({ curso_id: curso_id }).sort({ numero: 1 });
+
+        if (capitulos.length === 0) {
+            console.log(`⚠️ No se encontraron capítulos para curso_id: ${curso_id}`);
+        }
+        
         return res.json({
             ok: true,
             msg: "Capitulo obtenido",

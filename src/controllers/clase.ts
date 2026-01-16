@@ -7,6 +7,12 @@ export const obtenerClasesCurso: RequestHandler = async (req, res) => {
 
     try {
         const clases = await Clase.find({ curso_id: curso_id }).sort({ numero: 1 });
+
+        // ✅ NOTA: Array vacío es válido (curso sin clases)
+        if (clases.length === 0) {
+            console.log(`⚠️ No se encontraron clases para curso_id: ${curso_id}`);
+        }
+        
         return res.json({
             ok: true,
             msg: "Clase obtenido",

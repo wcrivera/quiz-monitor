@@ -6,14 +6,16 @@ import Tema from "../models/tema";
 export const obtenerTemasCapitulo: RequestHandler = async (req, res) => {
     const { capitulo_id } = req.params;
 
-    console.log(capitulo_id)
-
     try {
         // const temas = await Tema.find({ curso_id: capitulo_id }).sort({ numero: 1 });
 
         const temas = await Tema.find({ capitulo_id: capitulo_id }).sort({ numero: 1 });
 
-        console.log(temas)
+        // ✅ NOTA: Array vacío es válido (capítulo sin temas)
+        if (temas.length === 0) {
+            console.log(`⚠️ No se encontraron temas para capitulo_id: ${capitulo_id}`);
+        }
+
         return res.json({
             ok: true,
             msg: "Temas obtenidos",
