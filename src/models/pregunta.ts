@@ -1,9 +1,11 @@
 import { Schema, Types, model } from "mongoose";
 
-interface Ejercicio {
+interface Pregunta {
   id: Types.ObjectId;
   curso_id: Schema.Types.ObjectId;
   capitulo_id: Schema.Types.ObjectId;
+  clase_id: Schema.Types.ObjectId;
+  tema_id: Schema.Types.ObjectId;
   numero: number;
   enunciado: string;
   solucion: string;
@@ -12,7 +14,7 @@ interface Ejercicio {
   activo: Boolean;
 }
 
-const EjercicioSchema = new Schema<Ejercicio>({
+const PreguntaSchema = new Schema<Pregunta>({
   curso_id: {
     type: Schema.Types.ObjectId,
     ref: "Curso",
@@ -20,6 +22,14 @@ const EjercicioSchema = new Schema<Ejercicio>({
   capitulo_id: {
     type: Schema.Types.ObjectId,
     ref: "Capitulo",
+  },
+  clase_id: {
+    type: Schema.Types.ObjectId,
+    ref: "Clase",
+  },
+  tema_id: {
+    type: Schema.Types.ObjectId,
+    ref: "Tema",
   },
   numero: {
     type: Number,
@@ -70,10 +80,10 @@ const EjercicioSchema = new Schema<Ejercicio>({
   }
 });
 
-EjercicioSchema.method("toJSON", function () {
+PreguntaSchema.method("toJSON", function () {
   const { _id, ...object } = this.toObject();
   object.id = _id;
   return object;
 });
 
-export default model("Ejercicio", EjercicioSchema);
+export default model("Pregunta", PreguntaSchema);
