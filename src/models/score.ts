@@ -28,7 +28,8 @@ const ScoreSchema = new Schema<Score>({
 },
     {
         timestamps: true
-    });
+    }
+);
 
 ScoreSchema.method('toJSON', function () {
     const { _id, ...object } = this.toObject();

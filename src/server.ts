@@ -22,15 +22,33 @@ const httpServer = createServer(app);
 // MIDDLEWARE
 // ============================================================================
 
-app.use(cors({
-  origin: '*',
-  credentials: true
-}));
+// app.use(cors({
+//   origin: '*',
+//   credentials: true
+// }));
 
+// CORS Configuration
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production'
+    ? ['https://tu-app.herokuapp.com']  // Producción
+    : ['http://localhost:3000', 'http://localhost:5173'], // Desarrollo
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
+
+// También permitir iframe
 app.use((req, res, next) => {
   res.removeHeader('X-Frame-Options');
   next();
 });
+
+// app.use((req, res, next) => {
+//   res.removeHeader('X-Frame-Options');
+//   next();
+// });
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

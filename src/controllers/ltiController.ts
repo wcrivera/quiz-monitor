@@ -4,6 +4,7 @@
 
 import { Request, Response } from 'express';
 import { generateJWT, generateSessionId } from '../utils/jwt';
+import Usuario from '../models/usuario';
 
 /**
  * Manejar LTI Launch desde Canvas
@@ -21,15 +22,24 @@ export const handleLaunch = async (req: Request, res: Response): Promise<void> =
       custom_canvas_course_id,
       context_id,
       lis_person_name_full,
+      lis_person_name_given, 
+      lis_person_name_family, 
+      lis_person_contact_email_primary,
+      custom_canvas_user_login_id, 
       context_title,
       roles
     } = req.body;
+
 
     console.log('👤 User ID (custom):', custom_canvas_user_id);
     console.log('👤 User ID (fallback):', user_id);
     console.log('📚 Course ID (custom):', custom_canvas_course_id);
     console.log('📚 Course ID (fallback):', context_id);
     console.log('👨 Usuario:', lis_person_name_full);
+    console.log('👨 Usuario (given):', lis_person_name_given);
+    console.log('👨 Usuario (family):', lis_person_name_family);
+    console.log('📧 Email:', lis_person_contact_email_primary);
+    console.log('👤 User Login ID:', custom_canvas_user_login_id);
     console.log('📖 Curso:', context_title);
     console.log('🎭 Roles:', roles);
 
@@ -54,9 +64,9 @@ export const handleLaunch = async (req: Request, res: Response): Promise<void> =
     // ========================================================================
     // FASE 1: GENERAR JWT TOKEN
     // ========================================================================
-    
+
     const sessionId = generateSessionId();
-    
+
     const token = generateJWT({
       userId: canvasUserId,
       courseId: courseId,
@@ -66,14 +76,42 @@ export const handleLaunch = async (req: Request, res: Response): Promise<void> =
       sessionId: sessionId
     });
 
+    console.log(token)
+
     console.log('🔐 JWT Token generado');
     console.log('   📝 Session ID:', sessionId);
     console.log('   ⏰ Expira en: 2 horas');
-    
+
+    // ========================================================================
+    // FASE 2: CREAR USUARIO
+    // ========================================================================
+
+    console.log('👥 Verificando/creando usuario en base de datos');
+
+    // Verificar si el usuario ya existe
+    const usuarioExistente = await Usuario.findOne({
+      canvas_user_id: parseInt(canvasUserId),
+      canvas_course_id: parseInt(courseId)
+    });
+
+    if (usuarioExistente) {
+      console.log('✅ Usuario ya existe en la base de datos');
+    } else {
+      console.log('➕ Usuario no encontrado, creando nuevo usuario');
+      const nuevoUsuario = new Usuario({
+        nombre: lis_person_name_given,
+        apellido: lis_person_name_family,
+        email: lis_person_contact_email_primary,
+        canvas_user_id: parseInt(canvasUserId),
+        canvas_course_id: parseInt(courseId)
+      });
+      await nuevoUsuario.save();
+    }
+
     // ========================================================================
     // ENVIAR TOKEN AL FRONTEND (SIN EXPONER EN URL)
     // ========================================================================
-    
+
     console.log('🎯 Enviando token al frontend vía script injection');
     console.log('═══════════════════════════════════════════════════════════');
     console.log('');
@@ -164,71 +202,3 @@ export const handleLaunch = async (req: Request, res: Response): Promise<void> =
     res.status(500).send('Error processing LTI launch');
   }
 };
-
-// // ============================================================================
-// // LTI CONTROLLER - CONTENT VIEWER
-// // ============================================================================
-
-// import { Request, Response } from 'express';
-
-// /**
-//  * Manejar LTI Launch desde Canvas
-//  */
-// export const handleLaunch = async (req: Request, res: Response): Promise<void> => {
-//   try {
-//     console.log('');
-//     console.log('═══════════════════════════════════════════════════════════');
-//     console.log('🔍 LTI LAUNCH - CONTENT VIEWER');
-//     console.log('═══════════════════════════════════════════════════════════');
-
-//     const {
-//       custom_canvas_user_id,
-//       user_id,
-//       custom_canvas_course_id,
-//       context_id,
-//       lis_person_name_full
-//     } = req.body;
-
-//     console.log('👤 User ID (custom):', custom_canvas_user_id);
-//     console.log('👤 User ID (fallback):', user_id);
-//     console.log('📚 Course ID (custom):', custom_canvas_course_id);
-//     console.log('📚 Course ID (fallback):', context_id);
-//     console.log('👨 Usuario:', lis_person_name_full);
-
-//     // Extraer user_id
-//     const canvasUserId = custom_canvas_user_id || user_id;
-//     if (!canvasUserId) {
-//       console.error('❌ ERROR: No se pudo obtener user_id');
-//       res.status(400).send('Error: No user_id found in LTI launch');
-//       return;
-//     }
-//     console.log('✅ User ID final:', canvasUserId);
-
-//     // Extraer course_id
-//     const courseId = custom_canvas_course_id || context_id;
-//     if (!courseId) {
-//       console.error('❌ ERROR: No se pudo obtener course_id');
-//       res.status(400).send('Error: No course_id found in LTI launch');
-//       return;
-//     }
-//     console.log('✅ Course ID final:', courseId);
-
-//     // Redirigir al frontend
-//     const frontendUrl = `/curso?user_id=${canvasUserId}&course_id=${courseId}`;
-//     console.log('🎯 Redirigiendo a:', frontendUrl);
-//     console.log('═══════════════════════════════════════════════════════════');
-//     console.log('');
-
-//     res.redirect(frontendUrl);
-
-//   } catch (error) {
-//     console.error('');
-//     console.error('═══════════════════════════════════════════════════════════');
-//     console.error('❌ ERROR EN LTI LAUNCH:');
-//     console.error('═══════════════════════════════════════════════════════════');
-//     console.error(error);
-//     console.error('═══════════════════════════════════════════════════════════');
-//     console.error('');
-//     res.status(500).send('Error processing LTI launch');
-//   }
-// };
