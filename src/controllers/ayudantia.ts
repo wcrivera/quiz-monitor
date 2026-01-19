@@ -1,25 +1,115 @@
 import { RequestHandler } from "express";
 import Ayudantia from "../models/ayudantia";
+import { ObjectId } from "mongodb";
 
 // import Ayudantia from "../models/ayudantia";
 
 export const obtenerAyudantiasCapitulo: RequestHandler = async (req, res) => {
   const { capitulo_id } = req.params;
+  const { userId: canvas_usuario_id, courseId: canvas_curso_id } = req
+
+  // ✅ Validar parámetros requeridos
+  if (!canvas_usuario_id || !canvas_curso_id) {
+    return res.status(400).json({
+      ok: false,
+      msg: "Faltan parámetros: canvas_usuario_id y canvas_curso_id"
+    });
+  }
 
   try {
-    const ayudantias = await Ayudantia.find({ capitulo_id: capitulo_id }).sort({ numero: 1 });
+    const ayudantias = await Ayudantia.aggregate([
+      {
+        $match: {
+          capitulo_id: new ObjectId(capitulo_id),
+        },
+      },
+      {
+        $sort: { numero: 1 },
+      },
+      // ⭐⭐⭐ LOOKUP PARA SCORE - USANDO EL _id DE LA AYUDANTÍA ⭐⭐⭐
+      {
+        $lookup: {
+          from: "scores",
+          let: { ayudantia_id: "$_id" },  // ✅ El _id de la ayudantía
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$ejercicio_id", "$$ayudantia_id"] },  // ✅ Compara con el _id de la ayudantía
+                    { $eq: ["$canvas_usuario_id", Number(canvas_usuario_id)] },
+                    { $eq: ["$canvas_curso_id", Number(canvas_curso_id)] }
+                  ]
+                }
+              }
+            },
+            {
+              $sort: { createdAt: -1 }  // Más reciente primero
+            },
+            {
+              $limit: 1  // Solo el último
+            },
+            {
+              $project: {
+                score: 1,
+                createdAt: 1,
+                _id: 0
+              }
+            }
+          ],
+          as: "scoreData"
+        }
+      },
+      // ⭐ Extraer el score del array
+      {
+        $addFields: {
+          score: {
+            $ifNull: [
+              { $arrayElemAt: ["$scoreData.score", 0] },
+              null
+            ]
+          },
+          lastAttemptDate: {
+            $ifNull: [
+              { $arrayElemAt: ["$scoreData.createdAt", 0] },
+              null
+            ]
+          }
+        }
+      },
+      {
+        $project: {
+          id: "$_id",
+          _id: 0,
+          curso_id: 1,
+          capitulo_id: 1,
+          enunciado: 1,
+          numero: 1,
+          solucion: 1,
+          video: 1,
+          ejercicio: 1,  // ✅ Incluye todo el objeto ejercicio
+          score: 1,      // ⭐ Score del último intento
+          lastAttemptDate: 1
+        }
+      }
+    ]);
 
-    if (ayudantias.length === 0) {
-      console.log(`⚠️ No se encontraron ayudantias para capitulo_id: ${capitulo_id}`);
-    }
+    console.log(`✅ Ayudantías obtenidas: ${ayudantias.length}`);
+
+    // 🔍 DEBUG: Ver si los scores están llegando
+    console.log('📊 Ayudantías con scores:', ayudantias.map(a => ({
+      numero: a.numero,
+      score: a.score
+    })));
 
     return res.json({
       ok: true,
-      msg: "Ayudantias obtenidas",
+      msg: "Ayudantías obtenidas",
       ayudantias: ayudantias,
     });
+
   } catch (error) {
-    console.log(error);
+    console.error("❌ Error obteniendo ayudantías:", error);
     return res.status(500).json({
       ok: false,
       msg: "Estamos teniendo problemas, vuelva a intentarlo más tarde",

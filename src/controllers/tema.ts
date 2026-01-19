@@ -8,8 +8,6 @@ export const obtenerTemasCapitulo: RequestHandler = async (req, res) => {
 
     const { userId: canvas_usuario_id, courseId: canvas_curso_id } = req
 
-    console.log(canvas_usuario_id, capitulo_id)
-
     try {
 
         const temas = await Tema.aggregate([
