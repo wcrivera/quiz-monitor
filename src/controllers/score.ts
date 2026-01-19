@@ -8,14 +8,12 @@ export const crearScore: RequestHandler = async (req, res) => {
 
     try {
         const nuevoScore = new Score({
-            curso_id: courseId,
             ejercicio_id: ejercicio_id,
-            usuario_id: userId,
-            score: score
+            canvas_curso_id: Number(courseId),
+            canvas_usuario_id: Number(userId),
+            score: Number(score)
         });
         const nuevoScoreGuardado = await nuevoScore.save();
-        // const nuevoEjercicio = new Ayudantia(req.body);
-        // const ejercicioCreado = await nuevoEjercicio.save();
 
         return res.json({
             ok: true,

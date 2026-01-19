@@ -2,23 +2,24 @@ import { Schema, model, Types } from 'mongoose';
 
 interface Score {
     id: Types.ObjectId;
-    curso_id: Schema.Types.ObjectId;
     ejercicio_id: Schema.Types.ObjectId;
-    usuario_id: Schema.Types.ObjectId;
+    canvas_curso_id: number;
+    canvas_usuario_id: number;
     score: number
 }
 
 const ScoreSchema = new Schema<Score>({
-    curso_id: {
-        type: Schema.Types.ObjectId,
-        required: true
-    },
     ejercicio_id: {
         type: Schema.Types.ObjectId,
+        ref: "Ejercicio",
         required: true
     },
-    usuario_id: {
-        type: Schema.Types.ObjectId,
+    canvas_curso_id: {
+        type: Number,
+        required: true
+    },
+    canvas_usuario_id: {
+        type: Number,
         required: true
     },
     score: {
