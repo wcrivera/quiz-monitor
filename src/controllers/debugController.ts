@@ -12,6 +12,7 @@ import Usuario from '../models/usuario';
  * USO: GET /api/debug/token?user_id=13656&course_id=104914
  */
 export const getDebugToken = async (req: Request, res: Response): Promise<void> => {
+  console.log('HOLA')
   // Solo en desarrollo
   if (process.env.NODE_ENV === 'production') {
     res.status(403).json({ error: 'Debug endpoint disabled in production' });
@@ -93,6 +94,11 @@ export const getDebugToken = async (req: Request, res: Response): Promise<void> 
  * USO: GET /debug/login?user_id=13656&course_id=104914
  */
 export const debugLogin = async (req: Request, res: Response): Promise<void> => {
+
+  console.log(process.env.NODE_ENV)
+  console.log(req)
+  console.log(res)
+
   if (process.env.NODE_ENV === 'production') {
     res.status(403).send('Debug endpoint disabled in production');
     return;
@@ -101,6 +107,9 @@ export const debugLogin = async (req: Request, res: Response): Promise<void> => 
   const { user_id, course_id } = req.query;
   const userId = user_id || '13656';
   const courseId = course_id || '104914';
+
+  console.log(userId)
+  console.log(courseId)
 
   res.send(`
     <!DOCTYPE html>
