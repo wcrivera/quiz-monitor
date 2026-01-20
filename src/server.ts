@@ -71,7 +71,8 @@ console.log('📁 Sirviendo archivos estáticos desde:', publicPath);
 app.get('*', (req: Request, res: Response) => {
   if (!req.path.startsWith('/api') &&
     !req.path.startsWith('/lti') &&
-    !req.path.startsWith('/health')) {
+    !req.path.startsWith('/health') &&
+    !req.path.startsWith('/debug')) {
     const indexPath = path.join(publicPath, 'index.html');
     res.sendFile(indexPath);
   } else {
