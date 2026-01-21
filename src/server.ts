@@ -1,5 +1,5 @@
 // ============================================================================
-// SERVER - LTI CANVAS CONTENT VIEWER
+// SERVER - LTI CANVAS CONTENT VIEWER - CORREGIDO
 // ============================================================================
 
 import express, { Application, Request, Response } from 'express';
@@ -22,11 +22,6 @@ const httpServer = createServer(app);
 // MIDDLEWARE
 // ============================================================================
 
-// app.use(cors({
-//   origin: '*',
-//   credentials: true
-// }));
-
 // CORS Configuration
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production'
@@ -45,11 +40,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// app.use((req, res, next) => {
-//   res.removeHeader('X-Frame-Options');
-//   next();
-// });
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -60,31 +50,65 @@ app.use(express.urlencoded({ extended: true }));
 app.use(routes);
 
 // ============================================================================
-// STATIC FILES
-// ============================================================================
-
-const publicPath = path.join(__dirname, '../public');
-app.use(express.static(publicPath));
-console.log('📁 Sirviendo archivos estáticos desde:', publicPath);
-
-// Fallback para SPA
-app.get('*', (req: Request, res: Response) => {
-  if (!req.path.startsWith('/api') &&
-    !req.path.startsWith('/lti') &&
-    !req.path.startsWith('/health') &&
-    !req.path.startsWith('/debug')) {
-    const indexPath = path.join(publicPath, 'index.html');
-    res.sendFile(indexPath);
-  } else {
-    res.status(404).json({ ok: false, error: 'Endpoint not found' });
-  }
-});
-
-// ============================================================================
 // ERROR HANDLER
 // ============================================================================
 
 app.use(errorHandler);
+
+// ============================================================================
+// STATIC FILES (SOLO EN PRODUCCIÓN)
+// ============================================================================
+
+// ⚠️ IMPORTANTE: En desarrollo NO servir archivos estáticos
+// El frontend corre en su propio servidor Vite (puerto 3000)
+// Solo en producción se sirven archivos estáticos desde /public
+
+if (process.env.NODE_ENV === 'production') {
+  const publicPath = path.join(__dirname, '../public');
+  app.use(express.static(publicPath));
+  console.log('📁 Sirviendo archivos estáticos desde:', publicPath);
+}
+
+// ============================================================================
+// FALLBACK PARA SPA
+// ============================================================================
+
+app.get('*', (req: Request, res: Response) => {
+  // Si es una ruta de API que no existe, devolver 404 JSON
+  if (req.path.startsWith('/api') || 
+      req.path.startsWith('/lti') || 
+      req.path.startsWith('/debug')) {
+    return res.status(404).json({ 
+      ok: false, 
+      error: 'Endpoint not found',
+      path: req.path,
+      availableEndpoints: [
+        'GET /health',
+        'GET /api/debug/token',
+        'GET /debug/login',
+        'POST /lti/launch',
+        'GET /api/usuario/obtener/:curso_id/:user_id',
+        'GET /api/curso/obtener/:curso_id',
+        'GET /api/capitulo/obtener/:curso_id'
+      ]
+    });
+  }
+  
+  // En producción, servir SPA
+  if (process.env.NODE_ENV === 'production') {
+    const publicPath = path.join(__dirname, '../public');
+    const indexPath = path.join(publicPath, 'index.html');
+    return res.sendFile(indexPath);
+  }
+  
+  // En desarrollo, no servir nada (frontend está en puerto 3000)
+  res.status(404).json({ 
+    ok: false, 
+    error: 'This is the backend API server. Frontend runs on port 3000.',
+    path: req.path,
+    message: 'If you want to access the frontend, go to http://localhost:3000'
+  });
+});
 
 // ============================================================================
 // MONGODB CONNECTION
@@ -116,6 +140,11 @@ httpServer.listen(PORT, () => {
   console.log(`📍 Servidor:     http://localhost:${PORT}`);
   console.log(`🔗 Health:       http://localhost:${PORT}/health`);
   console.log(`🎯 LTI Launch:   http://localhost:${PORT}/lti/launch`);
+  console.log(`🐛 Debug Token:  http://localhost:${PORT}/api/debug/token`);
+  console.log(`🐛 Debug Login:  http://localhost:${PORT}/debug/login`);
+  console.log('───────────────────────────────────────────────────────────');
+  console.log(`🌍 Modo:         ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📁 Static files: ${process.env.NODE_ENV === 'production' ? 'ENABLED' : 'DISABLED'}`);
   console.log('═══════════════════════════════════════════════════════════');
   console.log('');
 });
